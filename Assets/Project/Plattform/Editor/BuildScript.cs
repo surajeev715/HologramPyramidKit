@@ -7,6 +7,8 @@ public static class BuildScript
 
     private const string WINDOWS_BUILD_PATH = "Builds/Windows/HologramApp.exe";
 
+    private const string APK_BUILD_PATH = "Builds/Android/HologramApp.apk";
+
     [MenuItem("Builds/Build Windows")]
     public static void BuildWindows()
     {
@@ -26,6 +28,22 @@ public static class BuildScript
     [MenuItem("Builds/Build Apk")]
     public static void BuildApk()
     {
+
+        EditorPrefs.SetBool("JdkUseEmbedded", true);
+        EditorPrefs.SetBool("SdkUseEmbedded", true);
+        EditorPrefs.SetBool("NdkUseEmbedded", true);
+
+        string[] Scenes = new string[] { SCENE_PATH };
+        BuildPlayerOptions options = new BuildPlayerOptions
+        {
+            scenes = Scenes,
+            locationPathName = APK_BUILD_PATH,
+            target = BuildTarget.Android,
+            options = BuildOptions.None
+        };
+
+        BuildPipeline.BuildPlayer(options);
+        Debug.Log("[BuildScript] Apk Build abgeschlossen!");
 
     }
 
