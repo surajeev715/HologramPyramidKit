@@ -131,6 +131,7 @@ GameObject:
   - component: {fileID: 405780359}
   - component: {fileID: 405780361}
   - component: {fileID: 405780360}
+  - component: {fileID: 405780362}
   m_Layer: 0
   m_Name: Switcher and Loader Initializer
   m_TagString: Untagged
@@ -194,6 +195,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7a9bba276bc565f44ad0e0eddee39de1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FiguresLoader
+--- !u!114 &405780362
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 405780357}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 909525aa338462d4ebdb59403c2a417c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SimulationConfiguration
 --- !u!1001 &937464527
 PrefabInstance:
   m_ObjectHideFlags: 0
