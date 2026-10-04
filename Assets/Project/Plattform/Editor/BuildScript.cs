@@ -9,6 +9,8 @@ public static class BuildScript
 
     private const string APK_BUILD_PATH = "Builds/Android/HologramApp.apk";
 
+    private const string WEB_BUILD_PATH = "Builds/Web";
+
     [MenuItem("Builds/Build Windows")]
     public static void BuildWindows()
     {
@@ -20,6 +22,7 @@ public static class BuildScript
             target = BuildTarget.StandaloneWindows64,
             options = BuildOptions.None
         };
+        SwitchTarget(BuildTargetGroup.Standalone, BuildTarget.StandaloneWindows64);
 
         BuildPipeline.BuildPlayer(options);
         Debug.Log("[BuildScript] Windows Build abgeschlossen!");
@@ -32,6 +35,7 @@ public static class BuildScript
         EditorPrefs.SetBool("JdkUseEmbedded", true);
         EditorPrefs.SetBool("SdkUseEmbedded", true);
         EditorPrefs.SetBool("NdkUseEmbedded", true);
+        SwitchTarget(BuildTargetGroup.Android, BuildTarget.Android);
 
         string[] Scenes = new string[] { SCENE_PATH };
         BuildPlayerOptions options = new BuildPlayerOptions
@@ -50,6 +54,28 @@ public static class BuildScript
     [MenuItem("Builds/Build Web")]
     public static void BuildWeb()
     {
+        SwitchTarget(BuildTargetGroup.WebGL, BuildTarget.WebGL);
 
+        PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Disabled;
+        BuildPlayerOptions options = new BuildPlayerOptions
+        {
+            scenes = new string[] { SCENE_PATH },
+
+            locationPathName = WEB_BUILD_PATH,
+
+            target = BuildTarget.WebGL,
+            options = BuildOptions.None
+        };
+
+        
+        BuildPipeline.BuildPlayer(options);
+    }
+
+    private static void SwitchTarget(BuildTargetGroup group, BuildTarget target)
+    {
+        if (EditorUserBuildSettings.activeBuildTarget != target)
+        {
+            EditorUserBuildSettings.SwitchActiveBuildTarget(group, target);
+        }
     }
 }
