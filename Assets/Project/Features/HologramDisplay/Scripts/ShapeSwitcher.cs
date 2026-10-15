@@ -117,5 +117,18 @@ public class ShapeSwitcher : MonoBehaviour
         {
             SetSpinning(!spinning);
         }
+
+        // Animation Button, nur für Formen mit mehreren Animationen (z.B. die Katze), über dem Shape Button
+        AnimationCycler cycler = shapes[current].GetComponentInChildren<AnimationCycler>();
+
+        if (cycler != null && cycler.states.Length > 1)
+        {
+            Rect animationRect = new Rect(margin, shapeRect.y - height - margin, width, height);
+
+            if (GUI.Button(animationRect, cycler.CurrentState, buttonStyle))
+            {
+                cycler.Next();
+            }
+        }
     }
 }
