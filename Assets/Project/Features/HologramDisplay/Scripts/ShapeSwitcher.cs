@@ -19,6 +19,9 @@ public class ShapeSwitcher : MonoBehaviour
     private int current = 0;
     private GUIStyle buttonStyle;
 
+    private SoundSensor _soundSensor;
+    public bool _hasSoundOccured;
+
     public void SetShapes(List<GameObject> shapes)
     {
         if (shapes == null)
@@ -38,6 +41,8 @@ public class ShapeSwitcher : MonoBehaviour
         }
         Show(0);
         SetSpinning(spinning);
+        _soundSensor = new SoundSensor();
+        _hasSoundOccured = false;
     }
 
     public void Show(int index)
@@ -121,14 +126,30 @@ public class ShapeSwitcher : MonoBehaviour
         // Animation Button, nur für Formen mit mehreren Animationen (z.B. die Katze), über dem Shape Button
         AnimationCycler cycler = shapes[current].GetComponentInChildren<AnimationCycler>();
 
-        if (cycler != null && cycler.states.Length > 1)
+        if (_hasSoundOccured)
         {
-            Rect animationRect = new Rect(margin, shapeRect.y - height - margin, width, height);
+            cycler.Next();
+        }
 
-            if (GUI.Button(animationRect, cycler.CurrentState, buttonStyle))
-            {
-                cycler.Next();
-            }
+        //if (cycler != null && cycler.states.Length > 1)
+        //{
+        //Rect animationRect = new Rect(margin, shapeRect.y - height - margin, width, height);
+
+        //if (GUI.Button(animationRect, cycler.CurrentState, buttonStyle))
+        //{
+        //cycler.Next();
+        //}
+    }
+
+    public void RunSensor()
+    {
+        _hasSoundOccured = _soundSensor.Sense();
+
+        AnimationCycler cycler = shapes[current].GetComponentInChildren<AnimationCycler>();
+
+        if (_hasSoundOccured)
+        {
+            cycler.Next();
         }
     }
 }
