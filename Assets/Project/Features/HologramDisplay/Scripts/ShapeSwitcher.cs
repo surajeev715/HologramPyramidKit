@@ -16,6 +16,14 @@ public class ShapeSwitcher : MonoBehaviour
     public float buttonHeightCm = 1f;
     public float buttonMarginCm = 0.3f;
 
+    [Header("Sound")]
+    [Tooltip("Peak level (0 to 1) the microphone has to reach to count as a loud sound.")]
+    [Range(0f, 1f)]
+    public float soundThreshold = 0.4f;
+
+    [Tooltip("Seconds after a detected sound in which no new sound is detected.")]
+    public float soundCooldownSeconds = 0.3f;
+
     private int current = 0;
     private GUIStyle buttonStyle;
 
@@ -41,7 +49,7 @@ public class ShapeSwitcher : MonoBehaviour
         }
         Show(0);
         SetSpinning(spinning);
-        _soundSensor = new SoundSensor();
+        _soundSensor = new SoundSensor(soundThreshold, soundCooldownSeconds);
         _hasSoundOccured = false;
     }
 
@@ -126,30 +134,37 @@ public class ShapeSwitcher : MonoBehaviour
         // Animation Button, nur für Formen mit mehreren Animationen (z.B. die Katze), über dem Shape Button
         AnimationCycler cycler = shapes[current].GetComponentInChildren<AnimationCycler>();
 
-        if (_hasSoundOccured)
+        if (cycler != null && cycler.states.Length > 1)
         {
-            cycler.Next();
+            Rect animationRect = new Rect(margin, shapeRect.y - height - margin, width, height);
+
+            if (GUI.Button(animationRect, cycler.CurrentState, buttonStyle))
+            {
+                cycler.Next();
+            }
         }
-
-        //if (cycler != null && cycler.states.Length > 1)
-        //{
-        //Rect animationRect = new Rect(margin, shapeRect.y - height - margin, width, height);
-
-        //if (GUI.Button(animationRect, cycler.CurrentState, buttonStyle))
-        //{
-        //cycler.Next();
-        //}
     }
 
     public void RunSensor()
     {
+        if (_soundSensor == null || shapes == null || current >= shapes.Count || shapes[current] == null)
+        {
+            return;
+        }
+
         _hasSoundOccured = _soundSensor.Sense();
 
-        AnimationCycler cycler = shapes[current].GetComponentInChildren<AnimationCycler>();
-
-        if (_hasSoundOccured)
+        if (!_hasSoundOccured)
         {
-            cycler.Next();
+            return;
+        }
+
+        //Only the balloon reacts to sounds, it pops.
+        BalloonPopper balloon = shapes[current].GetComponentInChildren<BalloonPopper>();
+
+        if (balloon != null)
+        {
+            balloon.Pop();
         }
     }
 }
