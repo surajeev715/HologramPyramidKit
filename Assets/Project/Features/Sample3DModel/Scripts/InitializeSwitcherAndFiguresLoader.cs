@@ -42,6 +42,6 @@ public class InitializeSwitcherAndFiguresLoader : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+        switcher.RunSensor();
     }
 }

@@ -16,8 +16,19 @@ public class ShapeSwitcher : MonoBehaviour
     public float buttonHeightCm = 1f;
     public float buttonMarginCm = 0.3f;
 
+    [Header("Sound")]
+    [Tooltip("Peak level (0 to 1) the microphone has to reach to count as a loud sound.")]
+    [Range(0f, 1f)]
+    public float soundThreshold = 0.4f;
+
+    [Tooltip("Seconds after a detected sound in which no new sound is detected.")]
+    public float soundCooldownSeconds = 0.3f;
+
     private int current = 0;
     private GUIStyle buttonStyle;
+
+    private SoundSensor _soundSensor;
+    public bool _hasSoundOccured;
 
     public void SetShapes(List<GameObject> shapes)
     {
@@ -38,6 +49,8 @@ public class ShapeSwitcher : MonoBehaviour
         }
         Show(0);
         SetSpinning(spinning);
+        _soundSensor = new SoundSensor(soundThreshold, soundCooldownSeconds);
+        _hasSoundOccured = false;
     }
 
     public void Show(int index)
@@ -129,6 +142,29 @@ public class ShapeSwitcher : MonoBehaviour
             {
                 cycler.Next();
             }
+        }
+    }
+
+    public void RunSensor()
+    {
+        if (_soundSensor == null || shapes == null || current >= shapes.Count || shapes[current] == null)
+        {
+            return;
+        }
+
+        _hasSoundOccured = _soundSensor.Sense();
+
+        if (!_hasSoundOccured)
+        {
+            return;
+        }
+
+        //Only the balloon reacts to sounds, it pops.
+        BalloonPopper balloon = shapes[current].GetComponentInChildren<BalloonPopper>();
+
+        if (balloon != null)
+        {
+            balloon.Pop();
         }
     }
 }
