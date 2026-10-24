@@ -39,4 +39,10 @@ public class SensorTestScript : MonoBehaviour
             setColorToRed();
         }
     }
+
+    public void setColorToYellow()
+    {
+        var renderer = GetComponent<Renderer>();
+        renderer.material.color = Color.yellow;
+    }
 }

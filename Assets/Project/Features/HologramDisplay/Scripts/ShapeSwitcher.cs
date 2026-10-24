@@ -29,6 +29,9 @@ public class ShapeSwitcher : MonoBehaviour
 
     private SoundSensor _soundSensor;
     public bool _hasSoundOccured;
+#if UNITY_ANDROID && !UNITY_EDITOR
+     private LightReaderSensor _lightSensor;
+#endif
 
     public void SetShapes(List<GameObject> shapes)
     {
@@ -50,6 +53,9 @@ public class ShapeSwitcher : MonoBehaviour
         Show(0);
         SetSpinning(spinning);
         _soundSensor = new SoundSensor(soundThreshold, soundCooldownSeconds);
+#if UNITY_ANDROID && !UNITY_EDITOR
+        _lightSensor = new LightReaderSensor();
+#endif
         _hasSoundOccured = false;
     }
 
@@ -154,6 +160,11 @@ public class ShapeSwitcher : MonoBehaviour
 
         _hasSoundOccured = _soundSensor.Sense();
 
+        bool hasLightTrigger = false;
+#if UNITY_ANDROID && !UNITY_EDITOR
+        hasLightTrigger = _lightSensor.Detect();
+#endif
+
 
         //Only the balloon reacts to sounds, it pops.
         BalloonPopper balloon = shapes[current].GetComponentInChildren<BalloonPopper>();
@@ -165,9 +176,19 @@ public class ShapeSwitcher : MonoBehaviour
 
         SensorTestScript sensorTest = shapes[current].GetComponentInChildren<SensorTestScript>();
 
-        if (_hasSoundOccured && (sensorTest != null))
+        if ((sensorTest != null))
         {
-            sensorTest.switchBetween();
+
+            if (_hasSoundOccured)
+            {
+                sensorTest.switchBetween();
+            }
+
+            else if (hasLightTrigger)
+            {
+                sensorTest.setColorToYellow();
+            }
         }
+
     }
 }
