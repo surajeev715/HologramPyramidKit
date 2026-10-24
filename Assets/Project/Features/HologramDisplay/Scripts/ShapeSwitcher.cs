@@ -154,17 +154,20 @@ public class ShapeSwitcher : MonoBehaviour
 
         _hasSoundOccured = _soundSensor.Sense();
 
-        if (!_hasSoundOccured)
-        {
-            return;
-        }
 
         //Only the balloon reacts to sounds, it pops.
         BalloonPopper balloon = shapes[current].GetComponentInChildren<BalloonPopper>();
 
-        if (balloon != null)
+        if (_hasSoundOccured && (balloon != null))
         {
             balloon.Pop();
+        }
+
+        SensorTestScript sensorTest = shapes[current].GetComponentInChildren<SensorTestScript>();
+
+        if (_hasSoundOccured && (sensorTest != null))
+        {
+            sensorTest.switchBetween();
         }
     }
 }
