@@ -9,7 +9,7 @@ public static class BuildScript
 
     private const string APK_BUILD_PATH = "Builds/Android/HologramApp.apk";
 
-    private const string WEB_BUILD_PATH = "Builds/Web";
+    private const string WEB_BUILD_PATH = "docs";
 
     [MenuItem("Builds/Build Windows")]
     public static void BuildWindows()

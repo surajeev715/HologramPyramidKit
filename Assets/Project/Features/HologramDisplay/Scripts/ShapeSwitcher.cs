@@ -29,6 +29,21 @@ public class ShapeSwitcher : MonoBehaviour
 
     private SoundSensor _soundSensor;
     public bool _hasSoundOccured;
+#if UNITY_ANDROID && !UNITY_EDITOR
+     //keep value display logic for future debugging
+     private LightReaderSensor _lightSensor;
+     private AndroidMicrophoneInputHandler _androidMicrophone;
+     private float peak, rms;
+     private float heldPeak, heldRms, holdTimer, crest, crestAtPeak;
+     private const float GATE = 0.17f;
+     private bool isLoud = false;
+     private float loudStartTime;
+     private float lastDuration; 
+     private BlowSensor _blowSensor;
+     private ClapSensor _clapSensor;
+     private bool _hasClapOccured = false;
+     private bool _hasBlowOccured = false;
+#endif
 
     public void SetShapes(List<GameObject> shapes)
     {
@@ -50,6 +65,12 @@ public class ShapeSwitcher : MonoBehaviour
         Show(0);
         SetSpinning(spinning);
         _soundSensor = new SoundSensor(soundThreshold, soundCooldownSeconds);
+#if UNITY_ANDROID && !UNITY_EDITOR
+        _lightSensor = new LightReaderSensor();
+        _androidMicrophone = new AndroidMicrophoneInputHandler();
+        _blowSensor = new BlowSensor();
+        _clapSensor = new ClapSensor();
+#endif
         _hasSoundOccured = false;
     }
 
@@ -119,6 +140,16 @@ public class ShapeSwitcher : MonoBehaviour
         Rect shapeRect = new Rect(margin, Screen.height - height - margin, width, height);
         Rect spinRect = new Rect(Screen.width - width - margin, Screen.height - height - margin, width, height);
 
+#if UNITY_ANDROID && !UNITY_EDITOR
+        //keep value display logic for future debugging
+        GUI.skin.label.fontSize = 50;
+        GUILayout.Label($"Peak: {peak:F3}   (max 2s: {heldPeak:F3})");
+        GUILayout.Label($"RMS:  {rms:F3}   (max 2s: {heldRms:F3})");
+        GUILayout.Label($"Crest: {crest:F1}   (at max peak: {crestAtPeak:F1})");
+        GUILayout.Label($"Last duration: {lastDuration:F3} s");
+        GUILayout.Label($"is Clap: {_hasClapOccured}");
+        GUILayout.Label($"is Blow: {_hasBlowOccured}");
+#endif
         // Shape Button (Klick führt NextShape aus)
         if (GUI.Button(shapeRect, shapes[current].name, buttonStyle))
         {
@@ -154,17 +185,83 @@ public class ShapeSwitcher : MonoBehaviour
 
         _hasSoundOccured = _soundSensor.Sense();
 
-        if (!_hasSoundOccured)
-        {
-            return;
-        }
+        bool hasLightTrigger = false;
+#if UNITY_ANDROID && !UNITY_EDITOR
+        hasLightTrigger = _lightSensor.Detect();
+        peak = _androidMicrophone.MeasureLoudness();
+        rms = _androidMicrophone.LastRms;
+        crest = peak / Mathf.Max(rms, 0.0001f);
+
+        //keep value display logic for future debugging
+        bool gateOpen = rms > GATE;
+        bool soundStarted = false;
+        bool soundEnded = false;
+
+        if (gateOpen && !isLoud)
+            {
+                loudStartTime = Time.time;
+                isLoud = true;
+                soundStarted = true;
+            }
+        else if (!gateOpen && isLoud)
+            {
+                lastDuration = Time.time - loudStartTime;
+                isLoud = false;
+                soundEnded = true;
+            }
+
+        // sensors decide, every frame
+        _hasClapOccured = _clapSensor.Detect(soundStarted, isLoud, soundEnded, peak, rms, lastDuration);
+        _hasBlowOccured = _blowSensor.Detect(soundStarted, isLoud, soundEnded, rms, lastDuration);
+
+        holdTimer -= Time.deltaTime;
+        if (holdTimer <= 0f) { heldPeak = 0f; heldRms = 0f; holdTimer = 2f; }
+        if (peak > heldPeak)          // new loudest moment in this 2 s window
+            crestAtPeak = crest;
+        heldPeak = Mathf.Max(heldPeak, peak);
+        heldRms  = Mathf.Max(heldRms, rms);
+#endif
+
 
         //Only the balloon reacts to sounds, it pops.
         BalloonPopper balloon = shapes[current].GetComponentInChildren<BalloonPopper>();
 
-        if (balloon != null)
+        if (_hasSoundOccured && (balloon != null))
         {
             balloon.Pop();
         }
+
+        //Only Sensortest
+
+        SensorTestScript sensorTest = shapes[current].GetComponentInChildren<SensorTestScript>();
+
+        if ((sensorTest != null))
+        {
+
+            if (_hasSoundOccured)
+            {
+                sensorTest.switchBetween();
+            }
+
+            else if (hasLightTrigger)
+            {
+                sensorTest.setColorToYellow();
+            }
+        }
+
+        //Only Candle Reacts to input
+
+#if UNITY_ANDROID && !UNITY_EDITOR
+    CandleAnimationScript animationScript = shapes[current].GetComponentInChildren<CandleAnimationScript>();
+
+        if ((animationScript != null))
+        {
+            animationScript.Animate(hasLightTrigger,_hasBlowOccured);
+        }
+        else
+        {
+            Debug.LogWarning("[CANDLE] No CandleAnimationScript found on " + shapes[current].name);
+        }
+#endif
     }
 }
