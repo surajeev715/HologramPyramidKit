@@ -231,6 +231,8 @@ public class ShapeSwitcher : MonoBehaviour
             balloon.Pop();
         }
 
+        //Only Sensortest
+
         SensorTestScript sensorTest = shapes[current].GetComponentInChildren<SensorTestScript>();
 
         if ((sensorTest != null))
@@ -247,5 +249,19 @@ public class ShapeSwitcher : MonoBehaviour
             }
         }
 
+        //Only Candle Reacts to input
+
+#if UNITY_ANDROID && !UNITY_EDITOR
+    CandleAnimationScript animationScript = shapes[current].GetComponentInChildren<CandleAnimationScript>();
+
+        if ((animationScript != null))
+        {
+            animationScript.Animate(hasLightTrigger,_hasBlowOccured);
+        }
+        else
+        {
+            Debug.LogWarning("[CANDLE] No CandleAnimationScript found on " + shapes[current].name);
+        }
+#endif
     }
 }

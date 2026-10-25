@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4100363531037097502}
   - component: {fileID: 1741074468003695896}
+  - component: {fileID: -4180036828357546839}
   m_Layer: 0
   m_Name: Candle
   m_TagString: Untagged
@@ -45,6 +46,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 640ace8b0cb284a23a90b4d332867325, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CubeAnimation
+--- !u!114 &-4180036828357546839
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5849484290167425469}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 375370babf684dc47b8df8c6d7c33480, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CandleAnimationScript
 --- !u!1001 &814675873622350282
 PrefabInstance:
   m_ObjectHideFlags: 0
