@@ -71,15 +71,30 @@ public class WebRemoteLinkPlatform : IRemoteLinkPlatform
         }
 
         string[] parts = raw.Split(EVENT_SEPARATOR, EVENT_PART_COUNT);
-        if (parts.Length != EVENT_PART_COUNT)
+        if (parts.Length != EVENT_PART_COUNT || !TryParseKind(parts[0], out PeerEventKind kind))
         {
             return false;
         }
 
-        peerEvent.Kind = parts[0];
+        peerEvent.Kind = kind;
         peerEvent.Peer = parts[1];
         peerEvent.Data = parts[2];
         return true;
+    }
+
+    private static bool TryParseKind(string text, out PeerEventKind kind)
+    {
+        switch (text)
+        {
+            case "loaded": kind = PeerEventKind.Loaded; return true;
+            case "open": kind = PeerEventKind.Open; return true;
+            case "connected": kind = PeerEventKind.Connected; return true;
+            case "data": kind = PeerEventKind.Data; return true;
+            case "closed": kind = PeerEventKind.Closed; return true;
+            case "signaling": kind = PeerEventKind.Signaling; return true;
+            case "error": kind = PeerEventKind.Error; return true;
+            default: kind = default; return false;
+        }
     }
 
     public string GetQrModules(string text)

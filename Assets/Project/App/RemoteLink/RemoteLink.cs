@@ -19,6 +19,8 @@ public class RemoteLink
     public RemoteHostSession Host { get; }
     public RemoteDeviceSession Device { get; }
 
+    public bool IsRemote => Device != null;
+
     //False while the libraries are still loading.
     public bool IsReady => _isReady;
 
@@ -51,11 +53,11 @@ public class RemoteLink
         //The platform keeps only a limited number of events, so this loop is short even if a remote floods messages.
         while (_platform.TryPollEvent(out PeerEvent peerEvent))
         {
-            if (peerEvent.Kind == PeerEvent.LOADED)
+            if (peerEvent.Kind == PeerEventKind.Loaded)
             {
                 CheckReady();
             }
-            else if (peerEvent.Kind == PeerEvent.ERROR && peerEvent.Peer == RemoteProtocol.ERROR_LIBRARY)
+            else if (peerEvent.Kind == PeerEventKind.Error && peerEvent.Peer == RemoteProtocol.ERROR_LIBRARY)
             {
                 LoadError = RemoteProtocol.DescribeError(peerEvent.Peer, peerEvent.Data);
             }

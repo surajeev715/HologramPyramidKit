@@ -84,30 +84,30 @@ public class RemoteHostSession : IRemoteSession
     {
         switch (peerEvent.Kind)
         {
-            case PeerEvent.OPEN:
+            case PeerEventKind.Open:
                 //Also arrives when the signaling server is back after it was lost.
                 State = HostState.Hosting;
                 IsSignalingLost = false;
                 JoinUrl = RemoteProtocol.BuildJoinUrl(_pageUrl, peerEvent.Peer);
                 break;
 
-            case PeerEvent.CONNECTED:
+            case PeerEventKind.Connected:
                 AcceptOrRefuse(peerEvent.Peer, now);
                 break;
 
-            case PeerEvent.DATA:
+            case PeerEventKind.Data:
                 HandleMessage(peerEvent.Peer, peerEvent.Data, now);
                 break;
 
-            case PeerEvent.CLOSED:
+            case PeerEventKind.Closed:
                 _remotes.Remove(peerEvent.Peer);
                 break;
 
-            case PeerEvent.SIGNALING:
+            case PeerEventKind.Signaling:
                 IsSignalingLost = true;
                 break;
 
-            case PeerEvent.ERROR:
+            case PeerEventKind.Error:
                 HandleError(peerEvent.Peer, peerEvent.Data);
                 break;
         }
@@ -154,7 +154,7 @@ public class RemoteHostSession : IRemoteSession
     {
         if (_remotes.Count >= RemoteProtocol.MAX_REMOTES)
         {
-            _platform.Send(peerId, RemoteMessage.Create(RemoteMessage.FULL).ToJson());
+            _platform.Send(peerId, RemoteMessage.Create(RemoteMessageType.Full).ToJson());
             _platform.Close(peerId, RemoteProtocol.FULL_CLOSE_DELAY_IN_MILLISECONDS);
             return;
         }
@@ -165,7 +165,7 @@ public class RemoteHostSession : IRemoteSession
             LastSeen = now,
             RateWindowStart = now
         };
-        _platform.Send(peerId, RemoteMessage.Create(RemoteMessage.WELCOME).ToJson());
+        _platform.Send(peerId, RemoteMessage.Create(RemoteMessageType.Welcome).ToJson());
         _platform.Send(peerId, CreateState().ToJson());
     }
 
@@ -195,7 +195,7 @@ public class RemoteHostSession : IRemoteSession
 
     private RemoteMessage CreateState()
     {
-        RemoteMessage state = RemoteMessage.Create(RemoteMessage.STATE);
+        RemoteMessage state = RemoteMessage.Create(RemoteMessageType.State);
         state.shape = _controls.CurrentShapeName;
         state.spin = _controls.IsSpinning;
         state.animation = _controls.CurrentAnimationName;
@@ -204,15 +204,15 @@ public class RemoteHostSession : IRemoteSession
 
     private void RunCommand(RemoteMessage message)
     {
-        switch (message.command)
+        switch (message.Command)
         {
-            case RemoteMessage.NEXT_SHAPE:
+            case RemoteCommand.NextShape:
                 _controls.NextShape();
                 break;
-            case RemoteMessage.SET_SPIN:
+            case RemoteCommand.SetSpin:
                 _controls.SetSpinning(message.spin);
                 break;
-            case RemoteMessage.NEXT_ANIMATION:
+            case RemoteCommand.NextAnimation:
                 _controls.NextAnimation();
                 break;
         }
@@ -232,26 +232,26 @@ public class RemoteHostSession : IRemoteSession
         }
 
         remote.LastSeen = now;
-        switch (message.type)
+        switch (message.Type)
         {
-            case RemoteMessage.HELLO:
+            case RemoteMessageType.Hello:
                 remote.Name = message.name;
                 break;
 
-            case RemoteMessage.PING:
+            case RemoteMessageType.Ping:
                 remote.RttInMilliseconds = message.rtt;
-                RemoteMessage pong = RemoteMessage.Create(RemoteMessage.PONG);
+                RemoteMessage pong = RemoteMessage.Create(RemoteMessageType.Pong);
                 pong.t = message.t;
                 _platform.Send(peerId, pong.ToJson());
                 break;
 
-            case RemoteMessage.SENSOR:
+            case RemoteMessageType.Sensor:
                 remote.PendingClap |= message.clap;
                 remote.PendingBlow |= message.blow;
                 remote.HasLight = message.light;
                 break;
 
-            case RemoteMessage.COMMAND:
+            case RemoteMessageType.Command:
                 RunCommand(message);
                 break;
         }

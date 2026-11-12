@@ -95,17 +95,17 @@ public class RemoteDeviceSession : IRemoteSession
     //The buttons only note what was tapped. It is sent in the next Apply, like everything else.
     public void RequestNextShape()
     {
-        QueueCommand(RemoteMessage.NEXT_SHAPE, false);
+        QueueCommand(RemoteCommand.NextShape, false);
     }
 
     public void RequestSetSpinning(bool value)
     {
-        QueueCommand(RemoteMessage.SET_SPIN, value);
+        QueueCommand(RemoteCommand.SetSpin, value);
     }
 
     public void RequestNextAnimation()
     {
-        QueueCommand(RemoteMessage.NEXT_ANIMATION, false);
+        QueueCommand(RemoteCommand.NextAnimation, false);
     }
 
     public void TriggerClap()
@@ -125,6 +125,8 @@ public class RemoteDeviceSession : IRemoteSession
 
     public void HandleEvent(PeerEvent peerEvent, float now)
     {
+        //Loading: nothing was opened yet. Failed: the connection was already stopped. The platform drops old events
+        //on Stop, this only makes sure a late one can not replace the reason it failed with.
         if (State != DeviceState.Connecting && State != DeviceState.Connected)
         {
             return;
@@ -132,24 +134,24 @@ public class RemoteDeviceSession : IRemoteSession
 
         switch (peerEvent.Kind)
         {
-            case PeerEvent.CONNECTED:
+            case PeerEventKind.Connected:
                 _isChannelOpen = true;
                 _lastPongTime = now;
                 _nextPingTime = now + RemoteProtocol.PING_INTERVAL_IN_SECONDS;
-                RemoteMessage hello = RemoteMessage.Create(RemoteMessage.HELLO);
+                RemoteMessage hello = RemoteMessage.Create(RemoteMessageType.Hello);
                 hello.name = Name;
                 Send(hello);
                 break;
 
-            case PeerEvent.DATA:
+            case PeerEventKind.Data:
                 HandleMessage(peerEvent.Data, now);
                 break;
 
-            case PeerEvent.CLOSED:
+            case PeerEventKind.Closed:
                 Fail("Disconnected", "The host closed the connection.");
                 break;
 
-            case PeerEvent.ERROR:
+            case PeerEventKind.Error:
                 //Once connected, the signaling server is no longer needed.
                 bool canIgnore = State == DeviceState.Connected && RemoteProtocol.IsSignalingError(peerEvent.Peer);
                 if (!canIgnore)
@@ -169,7 +171,7 @@ public class RemoteDeviceSession : IRemoteSession
             return;
         }
 
-        if (State == DeviceState.Connecting && now - _connectStartTime > RemoteProtocol.CONNECT_TIMEOUT_IN_SECONDS)
+        if (State == DeviceState.Connecting && (now - _connectStartTime) > RemoteProtocol.CONNECT_TIMEOUT_IN_SECONDS)
         {
             Fail("Could not connect",
                 "The devices could not reach each other directly. Guest Wi-Fi, eduroam and some routers block " +
@@ -177,6 +179,7 @@ public class RemoteDeviceSession : IRemoteSession
             return;
         }
 
+        //Not an error: still loading, still waiting for the channel (the timeout above covers that), or already failed.
         if (!_isChannelOpen)
         {
             return;
@@ -191,7 +194,7 @@ public class RemoteDeviceSession : IRemoteSession
         if (now >= _nextPingTime)
         {
             _nextPingTime = now + RemoteProtocol.PING_INTERVAL_IN_SECONDS;
-            RemoteMessage ping = RemoteMessage.Create(RemoteMessage.PING);
+            RemoteMessage ping = RemoteMessage.Create(RemoteMessageType.Ping);
             ping.t = (double)now * SECONDS_TO_MILLISECONDS;
             ping.rtt = _rttInMilliseconds;
             Send(ping);
@@ -234,6 +237,7 @@ public class RemoteDeviceSession : IRemoteSession
         _pendingClap |= hasClap;
         _pendingBlow |= hasBlow;
 
+        //Light is a state, not a moment: the host keeps the last value it got, so it is only sent when it changes.
         bool hasNews = _pendingClap || _pendingBlow || hasLight != _lastSentLight;
         bool maySend = now - _lastSensorSendTime >= RemoteProtocol.MIN_SENSOR_SEND_INTERVAL_IN_SECONDS;
         if (!hasNews || !maySend)
@@ -241,7 +245,7 @@ public class RemoteDeviceSession : IRemoteSession
             return;
         }
 
-        RemoteMessage message = RemoteMessage.Create(RemoteMessage.SENSOR);
+        RemoteMessage message = RemoteMessage.Create(RemoteMessageType.Sensor);
         message.seq = ++_sequence;
         message.clap = _pendingClap;
         message.blow = _pendingBlow;
@@ -254,15 +258,15 @@ public class RemoteDeviceSession : IRemoteSession
         _lastSensorSendTime = now;
     }
 
-    private void QueueCommand(string command, bool spin)
+    private void QueueCommand(RemoteCommand command, bool spin)
     {
         if (State != DeviceState.Connected || _queuedCommands.Count >= MAX_QUEUED_COMMANDS)
         {
             return;
         }
 
-        RemoteMessage message = RemoteMessage.Create(RemoteMessage.COMMAND);
-        message.command = command;
+        RemoteMessage message = RemoteMessage.Create(RemoteMessageType.Command);
+        message.Command = command;
         message.spin = spin;
         _queuedCommands.Add(message);
     }
@@ -287,25 +291,25 @@ public class RemoteDeviceSession : IRemoteSession
             return;
         }
 
-        switch (message.type)
+        switch (message.Type)
         {
-            case RemoteMessage.WELCOME:
+            case RemoteMessageType.Welcome:
                 State = DeviceState.Connected;
                 Status = "Connected as " + Name;
                 Hint = "";
                 _platform.KeepScreenOn();
                 break;
 
-            case RemoteMessage.FULL:
+            case RemoteMessageType.Full:
                 Fail("Host is full", "The host already has " + RemoteProtocol.MAX_REMOTES + " remotes.");
                 break;
 
-            case RemoteMessage.PONG:
+            case RemoteMessageType.Pong:
                 _lastPongTime = now;
                 _rttInMilliseconds = (float)((double)now * SECONDS_TO_MILLISECONDS - message.t);
                 break;
 
-            case RemoteMessage.STATE:
+            case RemoteMessageType.State:
                 HostShapeName = message.shape;
                 IsHostSpinning = message.spin;
                 HostAnimationName = message.animation;

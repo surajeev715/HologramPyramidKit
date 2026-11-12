@@ -96,7 +96,7 @@ public class ShapeSwitcher : MonoBehaviour
         _microphoneInputHandler = new WebMicrophoneInputHandler();
         WebRemoteLinkPlatform remoteLinkPlatform = new WebRemoteLinkPlatform();
         _remoteLink = new RemoteLink(remoteLinkPlatform, Application.absoluteURL, Application.streamingAssetsPath, new ShapeSwitcherControls(this));
-        if (_remoteLink.Device != null)
+        if (_remoteLink.IsRemote)
         {
             _remoteDeviceUI = new RemoteDeviceUI();
             RemoteScreen.HideHologram(shapes);
@@ -189,10 +189,7 @@ public class ShapeSwitcher : MonoBehaviour
 
         _shapeSwitchUI.Draw(cycler, spinning);
 
-        if (_remoteLinkUI != null)
-        {
-            _remoteLinkUI.Draw(_remoteLink);
-        }
+        _remoteLinkUI?.Draw(_remoteLink);
     }
 
     public void RunSensor()
@@ -203,10 +200,7 @@ public class ShapeSwitcher : MonoBehaviour
         }
 
         //Messages from other devices that arrived since the last frame
-        if (_remoteLink != null)
-        {
-            _remoteLink.ProcessIncoming(Time.unscaledTime);
-        }
+        _remoteLink?.ProcessIncoming(Time.unscaledTime);
 
         //Measurements
         peak =_microphoneInputHandler.MeasureLoudness();
@@ -224,10 +218,7 @@ public class ShapeSwitcher : MonoBehaviour
         _sensorHandler.UpdateContext(peak, rms, brightness, Time.time, _sensorContext);
 
         //Host: adds what the remotes detected. Remote: sends what was just detected to the host.
-        if (_remoteLink != null)
-        {
-            _remoteLink.Apply(_sensorContext, Time.unscaledTime);
-        }
+        _remoteLink?.Apply(_sensorContext, Time.unscaledTime);
 
         //for debugging
         holdTimer -= Time.deltaTime;

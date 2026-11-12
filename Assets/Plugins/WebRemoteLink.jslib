@@ -7,7 +7,7 @@
 //WebRemoteLink_PollEvent, nothing here ever calls into Unity.
 //
 //An event is one string "kind\npeerId\ndata". Kinds: loaded, open, connected, data, closed, signaling, error
-//(keep in sync with PeerEvent.cs).
+//(keep in sync with PeerEventKind in PeerEvent.cs and TryParseKind in WebRemoteLinkPlatform.cs).
 var WebRemoteLink = {
     $WebRemoteLinkState: {
         //Data events are dropped above this, so a remote that floods messages can not fill the memory.
