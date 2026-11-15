@@ -47,6 +47,13 @@ public class ShapeSwitcher : MonoBehaviour
 
     private bool _cycleNextPressed = false;
 
+    //Only set in the web build, other platforms have no remote link.
+    private RemoteLink _remoteLink;
+    private RemoteLinkUI _remoteLinkUI;
+
+    //Only set when this device joined a host as a remote. It then shows no hologram, only the remote's buttons.
+    private RemoteDeviceUI _remoteDeviceUI;
+
 #if UNITY_ANDROID && !UNITY_EDITOR
     private AndroidLightInputHandler _androidLightInput;
     private float luxMeasured;
@@ -87,6 +94,17 @@ public class ShapeSwitcher : MonoBehaviour
 #if UNITY_WEBGL && !UNITY_EDITOR
         _webLightInput = new WebLightInputHandler();
         _microphoneInputHandler = new WebMicrophoneInputHandler();
+        WebRemoteLinkPlatform remoteLinkPlatform = new WebRemoteLinkPlatform();
+        _remoteLink = new RemoteLink(remoteLinkPlatform, Application.absoluteURL, Application.streamingAssetsPath, new ShapeSwitcherControls(this));
+        if (_remoteLink.IsRemote)
+        {
+            _remoteDeviceUI = new RemoteDeviceUI();
+            RemoteScreen.HideHologram(shapes);
+        }
+        else
+        {
+            _remoteLinkUI = new RemoteLinkUI(remoteLinkPlatform);
+        }
 #endif
 
 #if UNITY_EDITOR
@@ -137,6 +155,11 @@ public class ShapeSwitcher : MonoBehaviour
         }
     }
 
+    public GameObject GetCurrentShape()
+    {
+        return (shapes == null || current >= shapes.Count) ? null : shapes[current];
+    }
+
     public string getCurrentShapeName()
     {
         return shapes[current].name;
@@ -144,6 +167,12 @@ public class ShapeSwitcher : MonoBehaviour
 
     void OnGUI()
     {
+        if (_remoteDeviceUI != null)
+        {
+            _remoteDeviceUI.Draw(_remoteLink);
+            return;
+        }
+
         if (shapes == null || shapes.Count == 0 || current >= shapes.Count || shapes[current] == null)
         {
             return;
@@ -159,6 +188,8 @@ public class ShapeSwitcher : MonoBehaviour
 #endif
 
         _shapeSwitchUI.Draw(cycler, spinning);
+
+        _remoteLinkUI?.Draw(_remoteLink);
     }
 
     public void RunSensor()
@@ -168,8 +199,11 @@ public class ShapeSwitcher : MonoBehaviour
             return;
         }
 
+        //Messages from other devices that arrived since the last frame
+        _remoteLink?.ProcessIncoming(Time.unscaledTime);
+
         //Measurements
-        peak = _microphoneInputHandler.MeasureLoudness();
+        peak =_microphoneInputHandler.MeasureLoudness();
         rms = _microphoneInputHandler.GetLastRms();
         crest = peak / Mathf.Max(rms, 0.0001f);
 
@@ -183,6 +217,9 @@ public class ShapeSwitcher : MonoBehaviour
 
         _sensorHandler.UpdateContext(peak, rms, brightness, Time.time, _sensorContext);
 
+        //Host: adds what the remotes detected. Remote: sends what was just detected to the host.
+        _remoteLink?.Apply(_sensorContext, Time.unscaledTime);
+
         //for debugging
         holdTimer -= Time.deltaTime;
         if (holdTimer <= 0f) { heldPeak = 0f; heldRms = 0f; holdTimer = 2f; }
@@ -193,6 +230,10 @@ public class ShapeSwitcher : MonoBehaviour
 
 
 
-        _dispatcher.Dispatch(_sensorContext, shapes[current], _cycleNextPressed);
+        //A remote has no shapes on screen that could react, its results went to the host above.
+        if (_remoteDeviceUI == null)
+        {
+            _dispatcher.Dispatch(_sensorContext, shapes[current], _cycleNextPressed);
+        }
     }
 }
