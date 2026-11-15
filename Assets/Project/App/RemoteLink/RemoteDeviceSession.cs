@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TMPro.EditorUtilities;
 
 //Remote side of the remote link: this device joined a host through its QR code. It sends the host what its own
 //sensors detect and the commands from its buttons. It never changes its own SensorContext.
@@ -37,6 +38,7 @@ public class RemoteDeviceSession : IRemoteSession
     private bool _manualClap;
     private bool _manualBlow;
     private bool _manualLight;
+    private string _text;
     private float _manualLightEndTime = float.NegativeInfinity;
 
     public DeviceState State { get; private set; } = DeviceState.Loading;
@@ -121,6 +123,19 @@ public class RemoteDeviceSession : IRemoteSession
     public void TriggerLight()
     {
         _manualLight = true;
+    } 
+
+    public void SetTextIfNotNull(string text)
+    {
+        if (text != null)
+        {
+            _text = text;
+        }
+    }
+
+    public string GetText()
+    {
+        return _text;
     }
 
     public void HandleEvent(PeerEvent peerEvent, float now)
@@ -250,6 +265,7 @@ public class RemoteDeviceSession : IRemoteSession
         message.clap = _pendingClap;
         message.blow = _pendingBlow;
         message.light = hasLight;
+        message.text = _text;
         Send(message);
 
         _pendingClap = false;

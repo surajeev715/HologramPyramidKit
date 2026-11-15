@@ -75,6 +75,11 @@ public class RemoteLink
         _session.Apply(context, now);
     }
 
+    public string GetText()
+    {
+        return Device.GetText();
+    }
+
     private void CheckReady()
     {
         if (_isReady || !_platform.IsReady())

@@ -180,9 +180,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ShapeSwitcher
   shapes: []
   spinning: 1
-  buttonWidthCm: 3.5
-  buttonHeightCm: 1
-  buttonMarginCm: 0.3
+  soundThreshold: 0.4
+  soundCooldownSeconds: 0.3
+  _hasSoundOccured: 0
 --- !u!114 &405780361
 MonoBehaviour:
   m_ObjectHideFlags: 0

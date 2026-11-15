@@ -228,12 +228,14 @@ public class ShapeSwitcher : MonoBehaviour
         heldPeak = Mathf.Max(heldPeak, peak);
         heldRms  = Mathf.Max(heldRms, rms);
 
+        //if remote link get the text else use default
+        string text = (_remoteLink != null) ? "connect and write" : _remoteLink?.GetText();
 
 
         //A remote has no shapes on screen that could react, its results went to the host above.
         if (_remoteDeviceUI == null)
         {
-            _dispatcher.Dispatch(_sensorContext, shapes[current], _cycleNextPressed);
+            _dispatcher.Dispatch(_sensorContext, shapes[current], _cycleNextPressed, text);
         }
     }
 }

@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class ShapeReactionDispatcher
 {
-    public void Dispatch(SensorContext context, GameObject gameObject, bool cycleNextPressed)
+    public void Dispatch(SensorContext context, GameObject gameObject, bool cycleNextPressed, string text)
     {
         bool _cycleNextPressed = cycleNextPressed;
         bool _hasSoundOccured = context.HasClap;
@@ -59,5 +59,7 @@ public class ShapeReactionDispatcher
                 cycler.Next();
             }
         }
+
+        //for Text Rendering
     }
 }

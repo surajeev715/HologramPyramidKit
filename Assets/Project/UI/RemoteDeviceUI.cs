@@ -18,6 +18,13 @@ public class RemoteDeviceUI
     private GUIStyle _buttonStyle;
     private GUIStyle _labelStyle;
 
+    private TextInputUI _textInput;
+
+    public RemoteDeviceUI()
+    {
+        _textInput = new TextInputUI();
+    }
+
     public void Draw(RemoteLink link)
     {
         RemoteDeviceSession device = link.Device;
@@ -62,7 +69,11 @@ public class RemoteDeviceUI
             DrawControls(device, height);
             GUILayout.Space(margin);
             DrawSensors(device, height);
+            _textInput.Draw();
+            device.SetTextIfNotNull(_textInput.text);
         }
+
+        
 
         GUILayout.EndArea();
     }

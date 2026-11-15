@@ -69,6 +69,9 @@ public class RemoteMessage
     public bool spin;
     public string animation;
 
+    //text for text rendering
+    public string text { get; set; }
+
     //Send time of a ping in milliseconds, the pong returns it unchanged.
     public double t;
 
