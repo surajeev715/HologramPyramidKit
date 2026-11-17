@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using TMPro.EditorUtilities;
 
 //Remote side of the remote link: this device joined a host through its QR code. It sends the host what its own
 //sensors detect and the commands from its buttons. It never changes its own SensorContext.
@@ -125,18 +124,11 @@ public class RemoteDeviceSession : IRemoteSession
         _manualLight = true;
     } 
 
-    public void SetTextIfNotNull(string text)
+    public void SetText(string text)
     {
-        if (text != null)
-        {
-            _text = text;
-        }
+        _text = text;
     }
 
-    public string GetText()
-    {
-        return _text;
-    }
 
     public void HandleEvent(PeerEvent peerEvent, float now)
     {
@@ -216,16 +208,16 @@ public class RemoteDeviceSession : IRemoteSession
         }
     }
 
-    public void Apply(SensorContext context, float now)
+    public void Apply(SensorContext sensorContext, TextContext textContext, float now)
     {
         //Manual taps count exactly like the real sensors.
         if (_manualLight)
         {
             _manualLightEndTime = now + MANUAL_LIGHT_IN_SECONDS;
         }
-        bool hasClap = context.HasClap || _manualClap;
-        bool hasBlow = context.HasBlow || _manualBlow;
-        bool hasLight = context.HasLight || now < _manualLightEndTime;
+        bool hasClap = sensorContext.HasClap || _manualClap;
+        bool hasBlow = sensorContext.HasBlow || _manualBlow;
+        bool hasLight = sensorContext.HasLight || now < _manualLightEndTime;
         _manualClap = false;
         _manualBlow = false;
         _manualLight = false;
@@ -265,7 +257,7 @@ public class RemoteDeviceSession : IRemoteSession
         message.clap = _pendingClap;
         message.blow = _pendingBlow;
         message.light = hasLight;
-        message.text = _text;
+        message.text = textContext.Text;
         Send(message);
 
         _pendingClap = false;

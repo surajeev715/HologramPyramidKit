@@ -10,5 +10,5 @@ public interface IRemoteSession
     void Tick(float now);
 
     //Called every frame after the local sensors wrote the context.
-    void Apply(SensorContext context, float now);
+    void Apply(SensorContext sensorContext, TextContext textContext, float now);
 }

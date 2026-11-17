@@ -25,7 +25,7 @@ public class RemoteDeviceUI
         _textInput = new TextInputUI();
     }
 
-    public void Draw(RemoteLink link)
+    public void Draw(RemoteLink link, TextContext textContext)
     {
         RemoteDeviceSession device = link.Device;
         float pixelsPerCm = ScreenDpi.PixelsPerCm;
@@ -70,7 +70,7 @@ public class RemoteDeviceUI
             GUILayout.Space(margin);
             DrawSensors(device, height);
             _textInput.Draw();
-            device.SetTextIfNotNull(_textInput.text);
+            textContext.Text = _textInput.text;
         }
 
         

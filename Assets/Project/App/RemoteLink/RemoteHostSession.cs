@@ -21,6 +21,8 @@ public class RemoteHostSession : IRemoteSession
         internal bool PendingBlow;
         //Light is a state: kept until the remote reports a change.
         internal bool HasLight;
+
+        internal string text;
     }
 
     private const float RATE_WINDOW_IN_SECONDS = 1f;
@@ -134,19 +136,21 @@ public class RemoteHostSession : IRemoteSession
     }
 
     //Remote input goes into the same context as local input: a clap on any device is a clap.
-    public void Apply(SensorContext context, float now)
+    public void Apply(SensorContext sensorContext, TextContext textContext, float now)
     {
         foreach (ConnectedRemote remote in _remotes.Values)
         {
             //While the host calibrates, the context stays empty. Claps and blows from that time are dropped.
-            if (!context.IsCalibrating)
+            if (!sensorContext.IsCalibrating)
             {
-                context.HasClap |= remote.PendingClap;
-                context.HasBlow |= remote.PendingBlow;
-                context.HasLight |= remote.HasLight;
+                sensorContext.HasClap |= remote.PendingClap;
+                sensorContext.HasBlow |= remote.PendingBlow;
+                sensorContext.HasLight |= remote.HasLight;
             }
+            textContext.Text = remote.text;
             remote.PendingClap = false;
             remote.PendingBlow = false;
+
         }
     }
 
@@ -249,6 +253,7 @@ public class RemoteHostSession : IRemoteSession
                 remote.PendingClap |= message.clap;
                 remote.PendingBlow |= message.blow;
                 remote.HasLight = message.light;
+                remote.text = message.text;
                 break;
 
             case RemoteMessageType.Command:

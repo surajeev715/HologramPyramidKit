@@ -62,6 +62,8 @@ public class RemoteMessage
     public bool blow;
     public bool light;
 
+    public string text;
+
     [SerializeField] private string command;
 
     //What the host shows right now. animation is empty if the shape has no animations to switch between.
@@ -69,8 +71,6 @@ public class RemoteMessage
     public bool spin;
     public string animation;
 
-    //text for text rendering
-    public string text { get; set; }
 
     //Send time of a ping in milliseconds, the pong returns it unchanged.
     public double t;
@@ -97,6 +97,7 @@ public class RemoteMessage
 
     public string ToJson()
     {
+        Debug.Log($"[REMOTE MESSAGE] send message with text: {this.text}");
         return JsonUtility.ToJson(this);
     }
 
@@ -112,9 +113,11 @@ public class RemoteMessage
         try
         {
             message = JsonUtility.FromJson<RemoteMessage>(json);
+            Debug.Log($"[REMOTE MESSAGE] message received with text: {message.text}");
         }
         catch (Exception)
         {
+            Debug.Log($"[REMOTE MESSAGE] Message reading failed");
             //Whatever a stranger sends must not stop the frame, so every parse failure is just an invalid message.
             return null;
         }
