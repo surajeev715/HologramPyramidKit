@@ -181,8 +181,7 @@ public class ShapeSwitcher : MonoBehaviour
             return;
         }
 
-        // Animation Button, nur für Formen mit mehreren Animationen (z.B. die Katze), über dem Shape Button
-        AnimationCycler cycler = shapes[current].GetComponentInChildren<AnimationCycler>();
+        IShapeCycler cycler = shapes[current].GetComponentInChildren<IShapeCycler>();
 
         _debugUI.Draw(peak, heldPeak, rms, heldRms, crest, crestAtPeak, lastDuration, _sensorContext, gate, brightness);
 
@@ -236,6 +235,8 @@ public class ShapeSwitcher : MonoBehaviour
         //A remote has no shapes on screen that could react, its results went to the host above.
         if (_remoteDeviceUI == null)
         {
+            //The cycle button was drawn in OnGUI() after the last frame
+            _cycleNextPressed = _shapeSwitchUI.ConsumeCycleNextPressed();
             _dispatcher.Dispatch(_sensorContext, _textContext, shapes[current], _cycleNextPressed);
         }
     }

@@ -1,0 +1,361 @@
+fileFormatVersion: 2
+guid: dc67be5808387534bab131b39ec8768d
+ModelImporter:
+  serializedVersion: 24600
+  internalIDToNameTable: []
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.033_Cube.043_MaterialMat
+    second: {fileID: 2100000, guid: 9e19ae390ffdd1a45a8654655363c081, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.033_Cube.043_blueMat
+    second: {fileID: 2100000, guid: e82663cf11cd9194cbc64402110885ce, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.033_Cube.043_transparentMat
+    second: {fileID: 2100000, guid: a590e7abd75264f478d30558538dc353, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.034_Cube.044_MaterialMat
+    second: {fileID: 2100000, guid: 9e19ae390ffdd1a45a8654655363c081, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.034_Cube.044_redMat
+    second: {fileID: 2100000, guid: 50cc2197f1352ea44ad6b924ad23540e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.034_Cube.044_transparentMat
+    second: {fileID: 2100000, guid: a590e7abd75264f478d30558538dc353, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.035_Cube.045_MaterialMat
+    second: {fileID: 2100000, guid: 9e19ae390ffdd1a45a8654655363c081, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.035_Cube.045_blueMat
+    second: {fileID: 2100000, guid: e82663cf11cd9194cbc64402110885ce, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.035_Cube.045_transparentMat
+    second: {fileID: 2100000, guid: a590e7abd75264f478d30558538dc353, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.036_Cube.046_MaterialMat
+    second: {fileID: 2100000, guid: 9e19ae390ffdd1a45a8654655363c081, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.036_Cube.046_OrangeMat
+    second: {fileID: 2100000, guid: c5e9ec917b94b814c8c2f4377c0a0f32, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.036_Cube.046_transparentMat
+    second: {fileID: 2100000, guid: a590e7abd75264f478d30558538dc353, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.037_Cube.047_MaterialMat
+    second: {fileID: 2100000, guid: 9e19ae390ffdd1a45a8654655363c081, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.037_Cube.047_greenMat
+    second: {fileID: 2100000, guid: b52dd926b5e184748a1cb465d562fa15, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.037_Cube.047_transparentMat
+    second: {fileID: 2100000, guid: a590e7abd75264f478d30558538dc353, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.038_Cube.048_MaterialMat
+    second: {fileID: 2100000, guid: 9e19ae390ffdd1a45a8654655363c081, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.038_Cube.048_transparentMat
+    second: {fileID: 2100000, guid: a590e7abd75264f478d30558538dc353, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.038_Cube.048_yellowMat
+    second: {fileID: 2100000, guid: e0e603776db049b46829452cd9e378c4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.041_Cube.051_MaterialMat
+    second: {fileID: 2100000, guid: 9e19ae390ffdd1a45a8654655363c081, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.041_Cube.051_transparentMat
+    second: {fileID: 2100000, guid: a590e7abd75264f478d30558538dc353, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.041_Cube.051_yellowMat
+    second: {fileID: 2100000, guid: e0e603776db049b46829452cd9e378c4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.043_Cube.053_MaterialMat
+    second: {fileID: 2100000, guid: 9e19ae390ffdd1a45a8654655363c081, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.043_Cube.053_OrangeMat
+    second: {fileID: 2100000, guid: c5e9ec917b94b814c8c2f4377c0a0f32, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.044_Cube.054_MaterialMat
+    second: {fileID: 2100000, guid: 9e19ae390ffdd1a45a8654655363c081, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.044_Cube.054_blueMat
+    second: {fileID: 2100000, guid: e82663cf11cd9194cbc64402110885ce, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.045_Cube.055_MaterialMat
+    second: {fileID: 2100000, guid: 9e19ae390ffdd1a45a8654655363c081, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.045_Cube.055_whiteMat
+    second: {fileID: 2100000, guid: ae556439b76550a4e8483f4af36fa7e8, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.046_Cube.056_MaterialMat
+    second: {fileID: 2100000, guid: 9e19ae390ffdd1a45a8654655363c081, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.046_Cube.056_redpurpleMat
+    second: {fileID: 2100000, guid: be5211af6184aba4e987665829a18d47, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.047_Cube.057_MaterialMat
+    second: {fileID: 2100000, guid: 9e19ae390ffdd1a45a8654655363c081, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.047_Cube.057_greenMat
+    second: {fileID: 2100000, guid: b52dd926b5e184748a1cb465d562fa15, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.048_Cube.058_MaterialMat
+    second: {fileID: 2100000, guid: 9e19ae390ffdd1a45a8654655363c081, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.048_Cube.058_redMat
+    second: {fileID: 2100000, guid: 50cc2197f1352ea44ad6b924ad23540e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.049_Cube.059_MaterialMat
+    second: {fileID: 2100000, guid: 9e19ae390ffdd1a45a8654655363c081, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.049_Cube.059_yellowMat
+    second: {fileID: 2100000, guid: e0e603776db049b46829452cd9e378c4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.050_Cube.060_MaterialMat
+    second: {fileID: 2100000, guid: 9e19ae390ffdd1a45a8654655363c081, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.050_Cube.060_silverMat
+    second: {fileID: 2100000, guid: 573eb412094765d48a28ecfaf2688636, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.051_Cube.061_MaterialMat
+    second: {fileID: 2100000, guid: 9e19ae390ffdd1a45a8654655363c081, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.051_Cube.061_goldMat
+    second: {fileID: 2100000, guid: 3ee1db69ce45f0c49adbcb2048928701, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.052_Cube.062_MaterialMat
+    second: {fileID: 2100000, guid: 9e19ae390ffdd1a45a8654655363c081, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.052_Cube.062_silverMat
+    second: {fileID: 2100000, guid: 573eb412094765d48a28ecfaf2688636, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.053_Cube.063_MaterialMat
+    second: {fileID: 2100000, guid: 9e19ae390ffdd1a45a8654655363c081, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.053_Cube.063_silverMat
+    second: {fileID: 2100000, guid: 573eb412094765d48a28ecfaf2688636, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.054_Cube.064_MaterialMat
+    second: {fileID: 2100000, guid: 9e19ae390ffdd1a45a8654655363c081, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.054_Cube.064_goldMat
+    second: {fileID: 2100000, guid: 3ee1db69ce45f0c49adbcb2048928701, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.055_Cube.065_MaterialMat
+    second: {fileID: 2100000, guid: 9e19ae390ffdd1a45a8654655363c081, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.055_Cube.065_goldMat
+    second: {fileID: 2100000, guid: 3ee1db69ce45f0c49adbcb2048928701, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.056_Cube.066_MaterialMat
+    second: {fileID: 2100000, guid: 9e19ae390ffdd1a45a8654655363c081, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cube.056_Cube.066_goldMat
+    second: {fileID: 2100000, guid: 3ee1db69ce45f0c49adbcb2048928701, type: 2}
+  materials:
+    materialImportMode: 2
+    materialName: 0
+    materialSearch: 1
+    materialLocation: 1
+    searchTexturesGlobally: 0
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    removeConstantScaleCurves: 0
+    motionNodeName: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    importConstraints: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations: []
+    isReadable: 0
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    useSRGBMaterialColor: 1
+    sortHierarchyByName: 1
+    preBakeConvexCollisionMesh: 0
+    preBakeTriangleCollisionMesh: 0
+    importPhysicalCameras: 1
+    importVisibility: 1
+    importBlendShapes: 1
+    importCameras: 1
+    importLights: 1
+    nodeNameCollisionStrategy: 1
+    fileIdsGeneration: 2
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    keepQuads: 0
+    weldVertices: 1
+    bakeAxisConversion: 0
+    preserveHierarchy: 0
+    skinWeightsMode: 0
+    maxBonesPerVertex: 4
+    minBoneWeight: 0.001
+    optimizeBones: 1
+    generateMeshLods: 0
+    meshLodGenerationFlags: 0
+    maximumMeshLod: -1
+    importUVs: -1
+    importVertexColors: 1
+    meshOptimizationFlags: -1
+    indexFormat: 0
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVMarginMethod: 1
+    secondaryUVMinLightmapResolution: 40
+    secondaryUVMinObjectScale: 1
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+    strictVertexDataChecks: 0
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+    normalCalculationMode: 4
+    legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 0
+    blendShapeNormalImportMode: 1
+    normalSmoothingSource: 0
+    calculateBlendshapeNormalsDeltaFromImportedNormals: 0
+  referencedClips: []
+  importAnimation: 1
+  humanDescription:
+    serializedVersion: 3
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    globalScale: 1
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+    hasExtraRoot: 0
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  autoGenerateAvatarMappingIfUnspecified: 1
+  animationType: 2
+  humanoidOversampling: 1
+  avatarSetup: 0
+  addHumanoidExtraRootOnlyWhenUsingAvatar: 1
+  importBlendShapeDeformPercent: 1
+  remapMaterialsIfMaterialImportModeIsNone: 0
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

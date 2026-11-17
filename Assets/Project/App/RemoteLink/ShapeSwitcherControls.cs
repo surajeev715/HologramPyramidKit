@@ -27,8 +27,8 @@ public class ShapeSwitcherControls : IHologramControls
     {
         get
         {
-            AnimationCycler cycler = FindCycler();
-            return cycler != null ? cycler.CurrentState : "";
+            IShapeCycler cycler = FindCycler();
+            return cycler != null ? cycler.CurrentName : "";
         }
     }
 
@@ -44,15 +44,15 @@ public class ShapeSwitcherControls : IHologramControls
 
     public void NextAnimation()
     {
-        AnimationCycler cycler = FindCycler();
+        IShapeCycler cycler = FindCycler();
         if (cycler != null)
         {
             cycler.Next();
         }
     }
 
-    //Only shapes with several animations (e.g. the cat) have something to switch.
-    private AnimationCycler FindCycler()
+    //Only shapes with several versions (e.g. the balloons) have something to switch.
+    private IShapeCycler FindCycler()
     {
         GameObject shape = _switcher.GetCurrentShape();
         if (shape == null)
@@ -60,7 +60,7 @@ public class ShapeSwitcherControls : IHologramControls
             return null;
         }
 
-        AnimationCycler cycler = shape.GetComponentInChildren<AnimationCycler>();
-        return cycler != null && cycler.states.Length >= MIN_STATES_TO_SWITCH ? cycler : null;
+        IShapeCycler cycler = shape.GetComponentInChildren<IShapeCycler>();
+        return cycler != null && cycler.Count >= MIN_STATES_TO_SWITCH ? cycler : null;
     }
 }
