@@ -37,6 +37,7 @@ public class RemoteDeviceSession : IRemoteSession
     private bool _manualClap;
     private bool _manualBlow;
     private bool _manualLight;
+    private string _text;
     private float _manualLightEndTime = float.NegativeInfinity;
 
     public DeviceState State { get; private set; } = DeviceState.Loading;
@@ -121,7 +122,13 @@ public class RemoteDeviceSession : IRemoteSession
     public void TriggerLight()
     {
         _manualLight = true;
+    } 
+
+    public void SetText(string text)
+    {
+        _text = text;
     }
+
 
     public void HandleEvent(PeerEvent peerEvent, float now)
     {
@@ -201,19 +208,20 @@ public class RemoteDeviceSession : IRemoteSession
         }
     }
 
-    public void Apply(SensorContext context, float now)
+    public void Apply(SensorContext sensorContext, TextContext textContext, float now)
     {
         //Manual taps count exactly like the real sensors.
         if (_manualLight)
         {
             _manualLightEndTime = now + MANUAL_LIGHT_IN_SECONDS;
         }
-        bool hasClap = context.HasClap || _manualClap;
-        bool hasBlow = context.HasBlow || _manualBlow;
-        bool hasLight = context.HasLight || now < _manualLightEndTime;
+        bool hasClap = sensorContext.HasClap || _manualClap;
+        bool hasBlow = sensorContext.HasBlow || _manualBlow;
+        bool hasLight = sensorContext.HasLight || now < _manualLightEndTime;
         _manualClap = false;
         _manualBlow = false;
         _manualLight = false;
+        
 
         if (hasClap) LastClapTime = now;
         if (hasBlow) LastBlowTime = now;
@@ -238,11 +246,17 @@ public class RemoteDeviceSession : IRemoteSession
         _pendingBlow |= hasBlow;
 
         //Light is a state, not a moment: the host keeps the last value it got, so it is only sent when it changes.
-        bool hasNews = _pendingClap || _pendingBlow || hasLight != _lastSentLight;
+        bool hasNews = _pendingClap || _pendingBlow || hasLight != _lastSentLight || (_text != textContext.Text);
         bool maySend = now - _lastSensorSendTime >= RemoteProtocol.MIN_SENSOR_SEND_INTERVAL_IN_SECONDS;
         if (!hasNews || !maySend)
         {
             return;
+        }
+
+        //update text
+        if (_text == null || (_text != textContext.Text))
+        {
+            _text = textContext.Text;
         }
 
         RemoteMessage message = RemoteMessage.Create(RemoteMessageType.Sensor);
@@ -250,6 +264,7 @@ public class RemoteDeviceSession : IRemoteSession
         message.clap = _pendingClap;
         message.blow = _pendingBlow;
         message.light = hasLight;
+        message.text = _text;
         Send(message);
 
         _pendingClap = false;

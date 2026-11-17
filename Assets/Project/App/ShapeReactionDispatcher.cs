@@ -2,12 +2,12 @@ using UnityEngine;
 
 public class ShapeReactionDispatcher
 {
-    public void Dispatch(SensorContext context, GameObject gameObject, bool cycleNextPressed)
+    public void Dispatch(SensorContext sensorContext, TextContext textContext, GameObject gameObject, bool cycleNextPressed)
     {
         bool _cycleNextPressed = cycleNextPressed;
-        bool _hasSoundOccured = context.HasClap;
-        bool hasLightTrigger = context.HasLight;
-        bool _hasBlowOccured = context.HasBlow;
+        bool _hasSoundOccured = sensorContext.HasClap;
+        bool hasLightTrigger = sensorContext.HasLight;
+        bool _hasBlowOccured = sensorContext.HasBlow;
 
 
         //Only the balloon reacts to sounds, it pops.
@@ -58,6 +58,14 @@ public class ShapeReactionDispatcher
             {
                 cycler.Next();
             }
+        }
+
+        //for Text Rendering
+        TextRenderingScript script = gameObject.GetComponentInChildren<TextRenderingScript>();
+        if(script != null)
+        {
+            Debug.Log($"[Text] Text Rendering script has been found going to render text : {textContext.Text}");
+            script?.UpdateText(textContext.Text);
         }
     }
 }

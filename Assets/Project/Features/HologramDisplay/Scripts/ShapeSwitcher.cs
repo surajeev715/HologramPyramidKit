@@ -40,6 +40,8 @@ public class ShapeSwitcher : MonoBehaviour
     private ShapeReactionDispatcher _dispatcher;
 
     private SensorContext _sensorContext;
+
+    private TextContext _textContext;
      private bool _hasClapOccured = false;
      private bool _hasBlowOccured = false;
 
@@ -85,6 +87,7 @@ public class ShapeSwitcher : MonoBehaviour
         _shapeSwitchUI = new ShapeSwitchUI(this);
         _dispatcher = new ShapeReactionDispatcher();
         _sensorContext = new SensorContext();
+        _textContext = new TextContext("Connect and Write");
         _sensorHandler = SensorHandler.CreateHandler();
 #if UNITY_ANDROID && !UNITY_EDITOR
         _microphoneInputHandler = new AndroidMicrophoneInputHandler();
@@ -169,7 +172,7 @@ public class ShapeSwitcher : MonoBehaviour
     {
         if (_remoteDeviceUI != null)
         {
-            _remoteDeviceUI.Draw(_remoteLink);
+            _remoteDeviceUI.Draw(_remoteLink, _textContext);
             return;
         }
 
@@ -218,7 +221,7 @@ public class ShapeSwitcher : MonoBehaviour
         _sensorHandler.UpdateContext(peak, rms, brightness, Time.time, _sensorContext);
 
         //Host: adds what the remotes detected. Remote: sends what was just detected to the host.
-        _remoteLink?.Apply(_sensorContext, Time.unscaledTime);
+        _remoteLink?.Apply(_sensorContext, _textContext, Time.unscaledTime);
 
         //for debugging
         holdTimer -= Time.deltaTime;
@@ -233,7 +236,7 @@ public class ShapeSwitcher : MonoBehaviour
         //A remote has no shapes on screen that could react, its results went to the host above.
         if (_remoteDeviceUI == null)
         {
-            _dispatcher.Dispatch(_sensorContext, shapes[current], _cycleNextPressed);
+            _dispatcher.Dispatch(_sensorContext, _textContext, shapes[current], _cycleNextPressed);
         }
     }
 }

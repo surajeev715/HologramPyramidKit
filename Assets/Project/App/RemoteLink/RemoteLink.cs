@@ -70,10 +70,12 @@ public class RemoteLink
         _session.Tick(now);
     }
 
-    public void Apply(SensorContext context, float now)
+    public void Apply(SensorContext sensorContext, TextContext textContext, float now)
     {
-        _session.Apply(context, now);
+        _session.Apply(sensorContext, textContext, now);
     }
+
+
 
     private void CheckReady()
     {
