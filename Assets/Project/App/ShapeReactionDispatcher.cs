@@ -7,7 +7,16 @@ public class ShapeReactionDispatcher
         bool _cycleNextPressed = cycleNextPressed;
         bool hasLightTrigger = sensorContext.HasLight;
         bool _hasBlowOccured = sensorContext.HasBlow;
+        bool hasClap = sensorContext.HasClap;
 
+
+        //Only the balloons react to claps, the shown balloon pops.
+        BalloonPopper popper = gameObject.GetComponentInChildren<BalloonPopper>();
+
+        if (popper != null)
+        {
+            popper.React(hasClap);
+        }
 
         //Only Candle Reacts to input
 
