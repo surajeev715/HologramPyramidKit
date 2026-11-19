@@ -1,32 +1,29 @@
-using System.Linq;
 using UnityEngine;
 
-//Shows the balloon in its idle animation and pops it with Pop(). After the pop it stays hidden for a moment and then reappears.
+//Pops the shown balloon on a clap with the Pop animation from Blender and brings it back a moment later.
+//ShapeReactionDispatcher calls React() every frame, so this needs no Update().
 [RequireComponent(typeof(Animator))]
 public class BalloonPopper : MonoBehaviour
 {
-    [Tooltip("Name of the looping Animator state the balloon shows normally.")]
+    [Tooltip("Name of the looping Animator state the balloons show normally.")]
     public string idleState = "Idle";
 
     [Tooltip("Name of the Animator state that pops the balloon.")]
     public string popState = "Pop";
 
-    [Tooltip("How long the balloon stays hidden after the pop animation before it reappears.")]
+    [Tooltip("The animation played by the Pop state. The balloon comes back after it has finished.")]
+    public AnimationClip popClip;
+
+    [Tooltip("How long the popped balloon stays away after the pop animation before it comes back.")]
     public float respawnDelaySeconds = 2f;
 
     private Animator animator;
-    private Renderer[] renderers;
-    private float popSeconds;
     private bool popped = false;
-    private float timer = 0f;
+    private float popStartTime = 0f;
 
     void Awake()
     {
         animator = GetComponent<Animator>();
-        renderers = GetComponentsInChildren<Renderer>(true);
-
-        AnimationClip popClip = animator.runtimeAnimatorController.animationClips.FirstOrDefault(clip => clip.name == popState);
-        popSeconds = popClip != null ? popClip.length : 0f;
     }
 
     void OnEnable()
@@ -35,50 +32,36 @@ public class BalloonPopper : MonoBehaviour
         ShowIdle();
     }
 
-    public void Pop()
-    {
-        if (popped)
-        {
-            return;
-        }
-
-        popped = true;
-        timer = 0f;
-        animator.Play(popState, 0, 0f);
-    }
-
-    void Update()
+    public void React(bool hasClap)
     {
         if (!popped)
         {
+            if (hasClap)
+            {
+                Pop();
+            }
+
             return;
         }
 
-        timer += Time.deltaTime;
+        float popSeconds = popClip != null ? popClip.length : 0f;
 
-        if (timer >= popSeconds)
-        {
-            SetVisible(false);
-        }
-
-        if (timer >= popSeconds + respawnDelaySeconds)
+        if (Time.time - popStartTime >= popSeconds + respawnDelaySeconds)
         {
             ShowIdle();
         }
+    }
+
+    void Pop()
+    {
+        popped = true;
+        popStartTime = Time.time;
+        animator.Play(popState, 0, 0f);
     }
 
     void ShowIdle()
     {
         popped = false;
         animator.Play(idleState, 0, 0f);
-        SetVisible(true);
-    }
-
-    void SetVisible(bool visible)
-    {
-        foreach (Renderer renderer in renderers)
-        {
-            renderer.enabled = visible;
-        }
     }
 }

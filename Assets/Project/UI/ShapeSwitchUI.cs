@@ -18,7 +18,7 @@ public class ShapeSwitchUI
         _switcher = switcher;
     }
 
-    public void Draw(AnimationCycler cycler, bool spinning)
+    public void Draw(IShapeCycler cycler, bool spinning)
     {
         // DPI Fallback für korrekte Button-Größe im Editor
         float dpi = Screen.dpi > 0 ? Screen.dpi : 96f;
@@ -51,16 +51,21 @@ public class ShapeSwitchUI
         }
 
 
-        if (cycler != null && cycler.states.Length > 1)
+        if (cycler != null && cycler.Count > 1)
         {
             Rect animationRect = new Rect(margin, shapeRect.y - height - margin, width, height);
 
-            _cycleNextPressed = GUI.Button(animationRect, cycler.CurrentState, buttonStyle);
+            if (GUI.Button(animationRect, cycler.CurrentName, buttonStyle))
+            {
+                _cycleNextPressed = true;
+            }
         }
     }
 
-    public bool getCycleNextPressed()
+    public bool ConsumeCycleNextPressed()
     {
-        return _cycleNextPressed;
+        bool pressed = _cycleNextPressed;
+        _cycleNextPressed = false;
+        return pressed;
     }
 }

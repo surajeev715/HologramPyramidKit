@@ -2,7 +2,7 @@ using UnityEngine;
 
 //Switches between the states of the Animator's base layer, either with Next() or automatically one after another.
 [RequireComponent(typeof(Animator))]
-public class AnimationCycler : MonoBehaviour
+public class AnimationCycler : MonoBehaviour, IShapeCycler
 {
     [Tooltip("Names of the Animator states to cycle through, in order.")]
     public string[] states = new string[0];
@@ -37,7 +37,12 @@ public class AnimationCycler : MonoBehaviour
         }
     }
 
-    public string CurrentState
+    public int Count
+    {
+        get { return states.Length; }
+    }
+
+    public string CurrentName
     {
         get { return states.Length > 0 ? states[current] : ""; }
     }
