@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using TMPro.EditorUtilities;
 
-class ActionController
+public class ActionController
 {
     SensorContext _context;
     public ActionController()
