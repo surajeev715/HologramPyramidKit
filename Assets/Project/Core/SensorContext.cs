@@ -33,4 +33,9 @@ public class SensorContext
     {
         IsCalibrating = false;
     }
+
+    public SensorContext Copy()
+    {
+        return new SensorContext(HasClap, HasBlow, HasLight, IsCalibrating);
+    }
 }
