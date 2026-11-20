@@ -5,29 +5,13 @@ using TMPro.EditorUtilities;
 
 public class ActionController
 {
-    SensorContext _context;
-    public ActionController()
-    {
-        _context = new SensorContext();
-    }
-    public void TriggerClap(bool flag)
-    {
-        _context.HasClap = flag;
-    }
+    private readonly SensorContextService _state;
 
-    public void TriggerBlow(bool flag)
-    {
-        _context.HasBlow = flag;
-    }
+    public ActionController(SensorContextService state) => _state = state;
 
-    public void TriggerLight(bool flag)
-    {
-        _context.HasLight = flag;
-    }
+    public void TriggerClap(bool flag) => _state.SetClap(flag);
+    public void TriggerBlow(bool flag) => _state.SetBlow(flag);
+    public void TriggerLight(bool flag) => _state.SetLight(flag);
 
-    public SensorContext GetContext()
-    {
-        return _context.Copy();
-    }
-
-};
+    public SensorContext GetContext() => _state.Snapshot();
+}
