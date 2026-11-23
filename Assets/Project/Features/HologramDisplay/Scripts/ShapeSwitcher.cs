@@ -10,28 +10,11 @@ public class ShapeSwitcher : MonoBehaviour
     [Tooltip("Whether the shapes spin when the scene starts.")]
     public bool spinning = true;
 
-
-    [Header("Sound")]
-    [Tooltip("Peak level (0 to 1) the microphone has to reach to count as a loud sound.")]
-    [Range(0f, 1f)]
-    public float soundThreshold = 0.4f;
-
-    [Tooltip("Seconds after a detected sound in which no new sound is detected.")]
-    public float soundCooldownSeconds = 0.3f;
-
     private int current = 0;
 
-    public bool _hasSoundOccured;
-
-     //keep value display logic for future debugging
-     private LightDomainSensor _lightSensor;
-     private IMicrophoneInputHandler _microphoneInputHandler;
-     private float peak, rms;
      private float heldPeak, heldRms, holdTimer, crest, crestAtPeak;
      private float gate = 0.17f;  
-     private bool isLoud = false;
      private float lastDuration; 
-     private ClapSensor _clapSensor;
 
     private ShapeSwitchUI _shapeSwitchUI;
 
@@ -39,13 +22,9 @@ public class ShapeSwitcher : MonoBehaviour
 
     private ShapeReactionDispatcher _dispatcher;
 
-    private SensorContext _sensorContext;
 
     private TextContext _textContext;
-     private bool _hasClapOccured = false;
-     private bool _hasBlowOccured = false;
 
-    private SensorHandler _sensorHandler;
 
     private bool _cycleNextPressed = false;
 
@@ -56,14 +35,16 @@ public class ShapeSwitcher : MonoBehaviour
     //Only set when this device joined a host as a remote. It then shows no hologram, only the remote's buttons.
     private RemoteDeviceUI _remoteDeviceUI;
 
-#if UNITY_ANDROID && !UNITY_EDITOR
-    private AndroidLightInputHandler _androidLightInput;
-    private float luxMeasured;
-#endif
+    //ActionController
+    private ActionController _actionController;
 
-    private WebLightInputHandler _webLightInput;
-    private float brightness;
+    private SensorController _sensorController;
 
+    private MeasurementController _measurementController;
+
+    private SensorContextService sensorContextService;
+
+    private LastActionTimeService lastActionTimeService;
 
     public void SetShapes(List<GameObject> shapes)
     {
@@ -86,17 +67,14 @@ public class ShapeSwitcher : MonoBehaviour
         SetSpinning(spinning);
         _shapeSwitchUI = new ShapeSwitchUI(this);
         _dispatcher = new ShapeReactionDispatcher();
-        _sensorContext = new SensorContext();
         _textContext = new TextContext("Connect and Write");
-        _sensorHandler = SensorHandler.CreateHandler();
-#if UNITY_ANDROID && !UNITY_EDITOR
-        _microphoneInputHandler = new AndroidMicrophoneInputHandler();
-        _androidLightInput = new AndroidLightInputHandler();
-#endif
+        sensorContextService = new SensorContextService();
+        lastActionTimeService = new LastActionTimeService();
+        _actionController = new ActionController(sensorContextService, lastActionTimeService);
+        _sensorController = new SensorController();
+        _measurementController = new MeasurementController();
 
 #if UNITY_WEBGL && !UNITY_EDITOR
-        _webLightInput = new WebLightInputHandler();
-        _microphoneInputHandler = new WebMicrophoneInputHandler();
         WebRemoteLinkPlatform remoteLinkPlatform = new WebRemoteLinkPlatform();
         _remoteLink = new RemoteLink(remoteLinkPlatform, Application.absoluteURL, Application.streamingAssetsPath, new ShapeSwitcherControls(this));
         if (_remoteLink.IsRemote)
@@ -108,11 +86,6 @@ public class ShapeSwitcher : MonoBehaviour
         {
             _remoteLinkUI = new RemoteLinkUI(remoteLinkPlatform);
         }
-#endif
-
-#if UNITY_EDITOR
-        _webLightInput = new WebLightInputHandler();
-        _microphoneInputHandler = new EditorMicrophoneInputHandler();
 #endif
         _debugUI = new SensorDebugUI();
     }
@@ -172,7 +145,7 @@ public class ShapeSwitcher : MonoBehaviour
     {
         if (_remoteDeviceUI != null)
         {
-            _remoteDeviceUI.Draw(_remoteLink, _textContext);
+            _remoteDeviceUI.Draw(_remoteLink, _textContext, _actionController);
             return;
         }
 
@@ -183,11 +156,8 @@ public class ShapeSwitcher : MonoBehaviour
 
         IShapeCycler cycler = shapes[current].GetComponentInChildren<IShapeCycler>();
 
-        _debugUI.Draw(peak, heldPeak, rms, heldRms, crest, crestAtPeak, lastDuration, _sensorContext, gate, brightness);
-
-#if UNITY_ANDROID && !UNITY_EDITOR
-    GUILayout.Label($"Lux: {luxMeasured}");
-#endif
+        MeasurementContext previousMeasurements = _measurementController.GetPreviousMeasurement();
+        _debugUI.Draw(previousMeasurements.Peak, heldPeak, previousMeasurements.Rms, heldRms, crest, crestAtPeak, lastDuration, _actionController.GetContext(), gate, previousMeasurements.Brightness);
 
         _shapeSwitchUI.Draw(cycler, spinning);
 
@@ -196,8 +166,9 @@ public class ShapeSwitcher : MonoBehaviour
 
     public void RunSensor()
     {
-        if (_sensorHandler == null || shapes == null || current >= shapes.Count || shapes[current] == null)
+        if ( shapes == null || current >= shapes.Count || shapes[current] == null)
         {
+            Debug.Log("Runsensor failed");
             return;
         }
 
@@ -205,30 +176,27 @@ public class ShapeSwitcher : MonoBehaviour
         _remoteLink?.ProcessIncoming(Time.unscaledTime);
 
         //Measurements
-        peak =_microphoneInputHandler.MeasureLoudness();
-        rms = _microphoneInputHandler.GetLastRms();
-        crest = peak / Mathf.Max(rms, 0.0001f);
+        MeasurementContext measurements = _measurementController.Measure();
 
-#if UNITY_ANDROID && !UNITY_EDITOR
-        luxMeasured = _androidLightInput.MeasureLux();
-#endif
+        //Sensor COntroller
+        SensorContext sensorContext = _sensorController.EvaluateMeasurementsAndDecideAction(measurements.Peak, measurements.Rms, measurements.Brightness, Time.time, _actionController.GetContext());
 
-#if UNITY_WEBGL || UNITY_EDITOR
-        brightness = _webLightInput.MeasureBrightness();
-#endif
 
-        _sensorHandler.UpdateContext(peak, rms, brightness, Time.time, _sensorContext);
 
         //Host: adds what the remotes detected. Remote: sends what was just detected to the host.
-        _remoteLink?.Apply(_sensorContext, _textContext, Time.unscaledTime);
+        _remoteLink?.Apply(sensorContext, _textContext, Time.unscaledTime);
+
+        //Updates Context of the Controller
+        sensorContext = _actionController.UpdateContext(sensorContext, Time.time);
+        _actionController.Tick(Time.time);
 
         //for debugging
         holdTimer -= Time.deltaTime;
         if (holdTimer <= 0f) { heldPeak = 0f; heldRms = 0f; holdTimer = 2f; }
-        if (peak > heldPeak)          // new loudest moment in this 2 s window
+        if (measurements.Peak > heldPeak)          // new loudest moment in this 2 s window
             crestAtPeak = crest;
-        heldPeak = Mathf.Max(heldPeak, peak);
-        heldRms  = Mathf.Max(heldRms, rms);
+        heldPeak = Mathf.Max(heldPeak, measurements.Peak);
+        heldRms  = Mathf.Max(heldRms, measurements.Rms);
 
 
 
@@ -237,7 +205,9 @@ public class ShapeSwitcher : MonoBehaviour
         {
             //The cycle button was drawn in OnGUI() after the last frame
             _cycleNextPressed = _shapeSwitchUI.ConsumeCycleNextPressed();
-            _dispatcher.Dispatch(_sensorContext, _textContext, shapes[current], _cycleNextPressed);
+            _dispatcher.Dispatch(sensorContext, _textContext, shapes[current], _cycleNextPressed);
         }
+
+        _actionController.ResetActions(Time.time);
     }
 }

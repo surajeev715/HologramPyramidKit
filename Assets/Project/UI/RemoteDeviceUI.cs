@@ -10,22 +10,19 @@ public class RemoteDeviceUI
     private const float BUTTON_FONT_SCALE = 0.32f;
     private const float LABEL_FONT_SCALE = 0.26f;
 
-    //A clap is detected in a single frame, so its field stays lit long enough to be seen.
-    private const float INDICATOR_HOLD_IN_SECONDS = 0.4f;
-
-    private static readonly Color INDICATOR_ON = new Color(1f, 0.85f, 0.2f);
-
     private GUIStyle _buttonStyle;
     private GUIStyle _labelStyle;
 
     private TextInputUI _textInput;
 
+    private ActionButtonsUI _actionButtonsUI;
     public RemoteDeviceUI()
     {
         _textInput = new TextInputUI();
+        _actionButtonsUI = new ActionButtonsUI();
     }
 
-    public void Draw(RemoteLink link, TextContext textContext)
+    public void Draw(RemoteLink link, TextContext textContext, ActionController controller)
     {
         RemoteDeviceSession device = link.Device;
         float pixelsPerCm = ScreenDpi.PixelsPerCm;
@@ -68,9 +65,13 @@ public class RemoteDeviceUI
             GUILayout.Space(margin);
             DrawControls(device, height);
             GUILayout.Space(margin);
-            DrawSensors(device, height);
+            _actionButtonsUI.Draw(height,controller,_buttonStyle, _labelStyle);
             _textInput.Draw();
             textContext.Text = _textInput.text;
+        }
+        else
+        {
+            GUILayout.Label("Connection Failed ?", _labelStyle);
         }
 
         
@@ -105,29 +106,6 @@ public class RemoteDeviceUI
         GUI.enabled = true;
     }
 
-    private void DrawSensors(RemoteDeviceSession device, GUILayoutOption height)
-    {
-        GUILayout.Label("Sensors of this device (lit when detected, tap to trigger)", _labelStyle);
-
-        float now = Time.unscaledTime;
-        GUILayout.BeginHorizontal();
-        if (SensorButton("Clap", device.LastClapTime, now, height)) device.TriggerClap();
-        if (SensorButton("Blow", device.LastBlowTime, now, height)) device.TriggerBlow();
-        if (SensorButton("Light", device.LastLightTime, now, height)) device.TriggerLight();
-        GUILayout.EndHorizontal();
-    }
-
-    private bool SensorButton(string text, float lastTime, float now, GUILayoutOption height)
-    {
-        Color previous = GUI.backgroundColor;
-        if (now - lastTime < INDICATOR_HOLD_IN_SECONDS)
-        {
-            GUI.backgroundColor = INDICATOR_ON;
-        }
-        bool isPressed = GUILayout.Button(text, _buttonStyle, height);
-        GUI.backgroundColor = previous;
-        return isPressed;
-    }
 
     private static string StatusText(RemoteDeviceSession device)
     {
