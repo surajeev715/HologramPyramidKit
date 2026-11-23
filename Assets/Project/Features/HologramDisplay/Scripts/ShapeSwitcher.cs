@@ -25,7 +25,6 @@ public class ShapeSwitcher : MonoBehaviour
 
     private TextContext _textContext;
 
-    private SensorHandler _sensorHandler;
 
     private bool _cycleNextPressed = false;
 
@@ -43,7 +42,9 @@ public class ShapeSwitcher : MonoBehaviour
 
     private MeasurementController _measurementController;
 
-    private SensorContextService service;
+    private SensorContextService sensorContextService;
+
+    private LastActionTimeService lastActionTimeService;
 
     public void SetShapes(List<GameObject> shapes)
     {
@@ -67,10 +68,10 @@ public class ShapeSwitcher : MonoBehaviour
         _shapeSwitchUI = new ShapeSwitchUI(this);
         _dispatcher = new ShapeReactionDispatcher();
         _textContext = new TextContext("Connect and Write");
-        _sensorHandler = SensorHandler.CreateHandler();
-        service = new SensorContextService();
-        _actionController = new ActionController(service);
-        _sensorController = new SensorController(service);
+        sensorContextService = new SensorContextService();
+        lastActionTimeService = new LastActionTimeService();
+        _actionController = new ActionController(sensorContextService, lastActionTimeService);
+        _sensorController = new SensorController();
         _measurementController = new MeasurementController();
 
 #if UNITY_WEBGL && !UNITY_EDITOR
@@ -144,7 +145,7 @@ public class ShapeSwitcher : MonoBehaviour
     {
         if (_remoteDeviceUI != null)
         {
-            _remoteDeviceUI.Draw(_remoteLink, _textContext);
+            _remoteDeviceUI.Draw(_remoteLink, _textContext, _actionController);
             return;
         }
 
@@ -165,8 +166,9 @@ public class ShapeSwitcher : MonoBehaviour
 
     public void RunSensor()
     {
-        if (_sensorHandler == null || shapes == null || current >= shapes.Count || shapes[current] == null)
+        if ( shapes == null || current >= shapes.Count || shapes[current] == null)
         {
+            Debug.Log("Runsensor failed");
             return;
         }
 
@@ -177,11 +179,16 @@ public class ShapeSwitcher : MonoBehaviour
         MeasurementContext measurements = _measurementController.Measure();
 
         //Sensor COntroller
-        SensorContext sensorContext = _sensorController.EvaluateMeasurementsAndDecideAction(measurements.Peak, measurements.Rms, measurements.Brightness, Time.time);
+        SensorContext sensorContext = _sensorController.EvaluateMeasurementsAndDecideAction(measurements.Peak, measurements.Rms, measurements.Brightness, Time.time, _actionController.GetContext());
+
 
 
         //Host: adds what the remotes detected. Remote: sends what was just detected to the host.
         _remoteLink?.Apply(sensorContext, _textContext, Time.unscaledTime);
+
+        //Updates Context of the Controller
+        sensorContext = _actionController.UpdateContext(sensorContext, Time.time);
+        _actionController.Tick(Time.time);
 
         //for debugging
         holdTimer -= Time.deltaTime;
@@ -200,5 +207,7 @@ public class ShapeSwitcher : MonoBehaviour
             _cycleNextPressed = _shapeSwitchUI.ConsumeCycleNextPressed();
             _dispatcher.Dispatch(sensorContext, _textContext, shapes[current], _cycleNextPressed);
         }
+
+        _actionController.ResetActions(Time.time);
     }
 }

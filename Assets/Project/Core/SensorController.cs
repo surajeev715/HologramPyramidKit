@@ -5,14 +5,19 @@ using System.Text;
 
 public class SensorController
 {
-    private readonly SensorContextService _state;
     private readonly SensorHandler _sensorHandler = SensorHandler.CreateHandler();
 
-    public SensorController(SensorContextService state) => _state = state;
 
-    public SensorContext EvaluateMeasurementsAndDecideAction(float peak, float rms, float brightness, float now)
+    public SensorContext EvaluateMeasurementsAndDecideAction(float peak, float rms, float brightness, float now, SensorContext pressed)
     {
-        _state.Apply(ctx => _sensorHandler.UpdateContext(peak, rms, brightness, now, ctx));
-        return _state.Snapshot();
+        SensorContext context = new SensorContext();
+        _sensorHandler.UpdateContext(peak, rms, brightness, now, context);  
+
+        context.HasClap |= pressed.HasClap;
+        context.HasBlow |= pressed.HasBlow;
+        context.HasLight |= pressed.HasLight;
+        return context;
     }
+
+
 }
