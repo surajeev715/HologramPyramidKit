@@ -35,10 +35,17 @@ public class RemoteHostSession : IRemoteSession
     private bool _isReady;
     private int _nextRemoteNumber = 1;
 
-    //The state the remotes know, sent again when it changes.
+    //What the remotes know, sent again when it changes. The two lists are sent on their own, only when they change.
     private string _sentShape;
     private bool _sentSpin;
-    private string _sentAnimation;
+    private string _sentVariant;
+    private int _sentShapeIndex = RemoteProtocol.NO_INDEX;
+    private int _sentVariantIndex = RemoteProtocol.NO_INDEX;
+    private ShapeFeatures _sentFeatures;
+    private bool _sentWordPerLine;
+    private int _sentShapeCount = -1;
+    private int _sentVariantsShapeIndex = RemoteProtocol.NO_INDEX;
+    private int _sentVariantCount = -1;
 
     public HostState State { get; private set; } = HostState.NotHosting;
 
@@ -170,10 +177,12 @@ public class RemoteHostSession : IRemoteSession
             RateWindowStart = now
         };
         _platform.Send(peerId, RemoteMessage.Create(RemoteMessageType.Welcome).ToJson());
+        SendAll(peerId, CreateShapesJsons());
+        SendAll(peerId, CreateVariantsJsons());
         _platform.Send(peerId, CreateState().ToJson());
     }
 
-    //The remotes' buttons show what the host shows, whoever changed it.
+    //The remotes' controls show what the host shows, whoever changed it.
     private void SendStateIfChanged()
     {
         if (_remotes.Count == 0)
@@ -181,17 +190,62 @@ public class RemoteHostSession : IRemoteSession
             return;
         }
 
-        RemoteMessage state = CreateState();
-        if (state.shape == _sentShape && state.spin == _sentSpin && state.animation == _sentAnimation)
+        int shapeCount = _controls.ShapeNames.Count;
+        if (shapeCount != _sentShapeCount)
+        {
+            _sentShapeCount = shapeCount;
+            BroadcastAll(CreateShapesJsons());
+        }
+
+        int shapeIndex = _controls.CurrentShapeIndex;
+        int variantCount = _controls.VariantNames.Count;
+        if (shapeIndex != _sentVariantsShapeIndex || variantCount != _sentVariantCount)
+        {
+            _sentVariantsShapeIndex = shapeIndex;
+            _sentVariantCount = variantCount;
+            BroadcastAll(CreateVariantsJsons());
+        }
+
+        string shape = _controls.CurrentShapeName;
+        bool spin = _controls.IsSpinning;
+        string variant = _controls.CurrentVariantName;
+        int variantIndex = _controls.CurrentVariantIndex;
+        ShapeFeatures features = _controls.CurrentFeatures;
+        bool wordPerLine = _controls.IsWordPerLine;
+        if (shape == _sentShape && spin == _sentSpin && variant == _sentVariant && shapeIndex == _sentShapeIndex
+            && variantIndex == _sentVariantIndex && features == _sentFeatures && wordPerLine == _sentWordPerLine)
         {
             return;
         }
-        _sentShape = state.shape;
-        _sentSpin = state.spin;
-        _sentAnimation = state.animation;
+        _sentWordPerLine = wordPerLine;
+        _sentShape = shape;
+        _sentSpin = spin;
+        _sentVariant = variant;
+        _sentShapeIndex = shapeIndex;
+        _sentVariantIndex = variantIndex;
+        _sentFeatures = features;
+        Broadcast(CreateState().ToJson());
+    }
 
-        string json = state.ToJson();
+    private void Broadcast(string json)
+    {
         foreach (string peerId in _remotes.Keys)
+        {
+            _platform.Send(peerId, json);
+        }
+    }
+
+    private void BroadcastAll(List<string> jsons)
+    {
+        foreach (string json in jsons)
+        {
+            Broadcast(json);
+        }
+    }
+
+    private void SendAll(string peerId, List<string> jsons)
+    {
+        foreach (string json in jsons)
         {
             _platform.Send(peerId, json);
         }
@@ -202,22 +256,39 @@ public class RemoteHostSession : IRemoteSession
         RemoteMessage state = RemoteMessage.Create(RemoteMessageType.State);
         state.shape = _controls.CurrentShapeName;
         state.spin = _controls.IsSpinning;
-        state.animation = _controls.CurrentAnimationName;
+        state.animation = _controls.CurrentVariantName;
+        state.shapeIndex = _controls.CurrentShapeIndex;
+        state.variantIndex = _controls.CurrentVariantIndex;
+        state.features = (int)_controls.CurrentFeatures;
+        state.wordPerLine = _controls.IsWordPerLine;
         return state;
+    }
+
+    private List<string> CreateShapesJsons()
+    {
+        return RemoteMessage.CreateListJsons(RemoteMessageType.Shapes, _controls.ShapeNames, RemoteProtocol.NO_INDEX);
+    }
+
+    private List<string> CreateVariantsJsons()
+    {
+        return RemoteMessage.CreateListJsons(RemoteMessageType.Variants, _controls.VariantNames, _controls.CurrentShapeIndex);
     }
 
     private void RunCommand(RemoteMessage message)
     {
         switch (message.Command)
         {
-            case RemoteCommand.NextShape:
-                _controls.NextShape();
-                break;
             case RemoteCommand.SetSpin:
                 _controls.SetSpinning(message.spin);
                 break;
-            case RemoteCommand.NextAnimation:
-                _controls.NextAnimation();
+            case RemoteCommand.SelectShape:
+                _controls.ShowShape(message.shapeIndex);
+                break;
+            case RemoteCommand.SelectVariant:
+                _controls.SelectVariant(message.variantIndex);
+                break;
+            case RemoteCommand.SetWordPerLine:
+                _controls.SetWordPerLine(message.wordPerLine);
                 break;
         }
     }

@@ -1,71 +1,89 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class ShapeSwitchUI
 {
-    [Header("Buttons")]
-    public float buttonWidthCm = 3.5f;
-    public float buttonHeightCm = 1f;
-    public float buttonMarginCm = 0.3f;
+    private const string NO_SHAPES = "None";
+    private const int MIN_VARIANTS = 2;
 
-    private GUIStyle buttonStyle;
+    private readonly ShapeSwitcher _switcher;
+    private readonly ObjectControlsUI _controls = new ObjectControlsUI();
+    private readonly List<string> _shapeNames = new List<string>();
+    private readonly VariantNameCache _variantNames = new VariantNameCache();
 
-    private ShapeSwitcher _switcher;
-
-    private bool _cycleNextPressed = false;
+    private int _selectedVariant = RemoteProtocol.NO_INDEX;
 
     public ShapeSwitchUI(ShapeSwitcher switcher)
     {
         _switcher = switcher;
     }
 
-    public void Draw(IShapeCycler cycler, bool spinning)
+    public bool IsPicking => _controls.IsPicking;
+
+    public void Draw(UITheme theme, IShapeCycler cycler, bool spinning, TextContext textContext, float listSpace)
     {
-        // DPI Fallback für korrekte Button-Größe im Editor
-        float dpi = Screen.dpi > 0 ? Screen.dpi : 96f;
-        float pixelsPerCm = dpi / 2.54f;
+        IShapeCycler variants = Variants(cycler);
+        IReadOnlyList<string> variantNames = _variantNames.Get(variants);
+        int variantIndex = variants != null ? variants.CurrentIndex : RemoteProtocol.NO_INDEX;
 
-        float width = buttonWidthCm * pixelsPerCm;
-        float height = buttonHeightCm * pixelsPerCm;
-        float margin = buttonMarginCm * pixelsPerCm;
+        bool hasText = (ShapeFeatureDetector.Detect(_switcher.GetCurrentShape()) & ShapeFeatures.Text) != 0;
+        bool? wordPerLine = hasText ? textContext.IsWordPerLine : (bool?)null;
 
-        if (buttonStyle == null)
+        ObjectControlsUI.Result result = _controls.Draw(theme, ShapeNames(), _switcher.CurrentIndex, NO_SHAPES,
+            variantNames, variantIndex, "", spinning, wordPerLine, listSpace);
+
+        if (result.PickedShape != RemoteProtocol.NO_INDEX)
         {
-            buttonStyle = new GUIStyle(GUI.skin.button);
-            buttonStyle.alignment = TextAnchor.MiddleCenter;
+            _switcher.Show(result.PickedShape);
         }
-        buttonStyle.fontSize = Mathf.RoundToInt(height * 0.35f);
-
-        Rect shapeRect = new Rect(margin, Screen.height - height - margin, width, height);
-        Rect spinRect = new Rect(Screen.width - width - margin, Screen.height - height - margin, width, height);
-
-        // Shape Button (Klick führt NextShape aus)
-        if (GUI.Button(shapeRect, _switcher.getCurrentShapeName(), buttonStyle))
+        if (result.PickedVariant != RemoteProtocol.NO_INDEX)
         {
-            _switcher.NextShape();
+            _selectedVariant = result.PickedVariant;
         }
-
-        // Spin Button
-        if (GUI.Button(spinRect, spinning ? "Spin: On" : "Spin: Off", buttonStyle))
+        if (result.Spinning != spinning)
         {
-            _switcher.SetSpinning(!spinning);
+            _switcher.SetSpinning(result.Spinning);
         }
-
-
-        if (cycler != null && cycler.Count > 1)
+        if (hasText)
         {
-            Rect animationRect = new Rect(margin, shapeRect.y - height - margin, width, height);
-
-            if (GUI.Button(animationRect, cycler.CurrentName, buttonStyle))
-            {
-                _cycleNextPressed = true;
-            }
+            textContext.IsWordPerLine = result.WordPerLine;
         }
     }
 
-    public bool ConsumeCycleNextPressed()
+    public static float Rows()
     {
-        bool pressed = _cycleNextPressed;
-        _cycleNextPressed = false;
-        return pressed;
+        return ObjectControlsUI.Rows(true);
+    }
+
+    public void CloseLists()
+    {
+        _controls.CloseLists();
+    }
+
+    public int ConsumeSelectedVariant()
+    {
+        int selected = _selectedVariant;
+        _selectedVariant = RemoteProtocol.NO_INDEX;
+        return selected;
+    }
+
+    private static IShapeCycler Variants(IShapeCycler cycler)
+    {
+        return cycler != null && cycler.Count >= MIN_VARIANTS ? cycler : null;
+    }
+
+    private List<string> ShapeNames()
+    {
+        List<GameObject> shapes = _switcher.shapes;
+        int count = shapes != null ? shapes.Count : 0;
+        if (_shapeNames.Count != count)
+        {
+            _shapeNames.Clear();
+            for (int i = 0; i < count; i++)
+            {
+                _shapeNames.Add(shapes[i] != null ? shapes[i].name : "");
+            }
+        }
+        return _shapeNames;
     }
 }

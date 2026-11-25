@@ -21,6 +21,11 @@ public class RemoteDeviceSession : IRemoteSession
     private readonly bool _isHostIdValid;
     private readonly List<RemoteMessage> _queuedCommands = new List<RemoteMessage>();
 
+    private static readonly string[] NO_NAMES = new string[0];
+
+    private readonly RemoteListParts _shapeNames = new RemoteListParts();
+    private readonly RemoteListParts _variantNames = new RemoteListParts();
+
     private bool _connectRequested;
     private bool _isChannelOpen;
     private float _connectStartTime;
@@ -56,7 +61,14 @@ public class RemoteDeviceSession : IRemoteSession
     //What the host's hologram shows, as last reported by the host.
     public string HostShapeName { get; private set; } = "";
     public bool IsHostSpinning { get; private set; }
-    public string HostAnimationName { get; private set; } = "";
+    public string HostVariantName { get; private set; } = "";
+    public IReadOnlyList<string> HostShapeNames => _shapeNames.Names;
+    public bool IsHostWordPerLine { get; private set; }
+    public int HostShapeIndex { get; private set; } = RemoteProtocol.NO_INDEX;
+    public int HostVariantIndex { get; private set; } = RemoteProtocol.NO_INDEX;
+    public ShapeFeatures HostFeatures { get; private set; } = ShapeFeatures.None;
+
+    public IReadOnlyList<string> HostVariantNames => _variantNames.ShapeIndex == HostShapeIndex ? _variantNames.Names : NO_NAMES;
 
     //When this device last detected (or manually triggered) each input, on the clock passed to Apply.
     public float LastClapTime { get; private set; } = float.NegativeInfinity;
@@ -93,20 +105,33 @@ public class RemoteDeviceSession : IRemoteSession
         }
     }
 
-    //The buttons only note what was tapped. It is sent in the next Apply, like everything else.
-    public void RequestNextShape()
+    //The controls only note what was tapped. It is sent in the next Apply, like everything else.
+    public void RequestSelectShape(int index)
     {
-        QueueCommand(RemoteCommand.NextShape, false);
+        RemoteMessage message = CreateCommand(RemoteCommand.SelectShape);
+        message.shapeIndex = index;
+        QueueCommand(message);
     }
 
     public void RequestSetSpinning(bool value)
     {
-        QueueCommand(RemoteCommand.SetSpin, value);
+        RemoteMessage message = CreateCommand(RemoteCommand.SetSpin);
+        message.spin = value;
+        QueueCommand(message);
     }
 
-    public void RequestNextAnimation()
+    public void RequestSetWordPerLine(bool value)
     {
-        QueueCommand(RemoteCommand.NextAnimation, false);
+        RemoteMessage message = CreateCommand(RemoteCommand.SetWordPerLine);
+        message.wordPerLine = value;
+        QueueCommand(message);
+    }
+
+    public void RequestSelectVariant(int index)
+    {
+        RemoteMessage message = CreateCommand(RemoteCommand.SelectVariant);
+        message.variantIndex = index;
+        QueueCommand(message);
     }
 
     public void TriggerClap()
@@ -273,16 +298,19 @@ public class RemoteDeviceSession : IRemoteSession
         _lastSensorSendTime = now;
     }
 
-    private void QueueCommand(RemoteCommand command, bool spin)
+    private static RemoteMessage CreateCommand(RemoteCommand command)
+    {
+        RemoteMessage message = RemoteMessage.Create(RemoteMessageType.Command);
+        message.Command = command;
+        return message;
+    }
+
+    private void QueueCommand(RemoteMessage message)
     {
         if (State != DeviceState.Connected || _queuedCommands.Count >= MAX_QUEUED_COMMANDS)
         {
             return;
         }
-
-        RemoteMessage message = RemoteMessage.Create(RemoteMessageType.Command);
-        message.Command = command;
-        message.spin = spin;
         _queuedCommands.Add(message);
     }
 
@@ -327,7 +355,19 @@ public class RemoteDeviceSession : IRemoteSession
             case RemoteMessageType.State:
                 HostShapeName = message.shape;
                 IsHostSpinning = message.spin;
-                HostAnimationName = message.animation;
+                HostVariantName = message.animation;
+                HostShapeIndex = message.shapeIndex;
+                HostVariantIndex = message.variantIndex;
+                HostFeatures = (ShapeFeatures)message.features;
+                IsHostWordPerLine = message.wordPerLine;
+                break;
+
+            case RemoteMessageType.Shapes:
+                _shapeNames.Add(message);
+                break;
+
+            case RemoteMessageType.Variants:
+                _variantNames.Add(message);
                 break;
         }
     }

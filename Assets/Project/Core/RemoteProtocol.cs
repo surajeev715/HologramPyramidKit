@@ -10,6 +10,11 @@ public static class RemoteProtocol
     public const int MAX_MESSAGES_PER_SECOND = 20;
     public const int MAX_NAME_CHARS = 24;
 
+    public const int MAX_LIST_NAMES = 64;
+
+    public const int NO_INDEX = -1;
+    public const string UNKNOWN_NAME = "?";
+
     public const float PING_INTERVAL_IN_SECONDS = 2f;
     public const float PEER_TIMEOUT_IN_SECONDS = 6f;
     public const float CONNECT_TIMEOUT_IN_SECONDS = 10f;
