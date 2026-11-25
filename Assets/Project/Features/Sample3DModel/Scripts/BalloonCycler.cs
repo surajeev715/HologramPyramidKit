@@ -1,6 +1,6 @@
 using UnityEngine;
 
-//Shows one balloon at a time and switches to the next one with Next(), like the cat switches between its animations.
+//Shows one balloon at a time and switches to another one with Select(), like the lion switches between its animations.
 public class BalloonCycler : MonoBehaviour, IShapeCycler
 {
     [Tooltip("The balloons to switch between, in order. Only one of them is shown at a time.")]
@@ -20,19 +20,29 @@ public class BalloonCycler : MonoBehaviour, IShapeCycler
         get { return balloons.Length; }
     }
 
+    public int CurrentIndex
+    {
+        get { return current; }
+    }
+
     public string CurrentName
     {
         get { return balloons.Length > 0 ? balloons[current].name : ""; }
     }
 
-    public void Next()
+    public string NameAt(int index)
     {
-        if (balloons.Length < 2)
+        return index >= 0 && index < balloons.Length ? balloons[index].name : "";
+    }
+
+    public void Select(int index)
+    {
+        if (index < 0 || index >= balloons.Length || index == current)
         {
             return;
         }
 
-        current = (current + 1) % balloons.Length;
+        current = index;
         ShowCurrent();
     }
 

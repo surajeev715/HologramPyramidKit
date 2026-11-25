@@ -2,9 +2,8 @@ using UnityEngine;
 
 public class ShapeReactionDispatcher
 {
-    public void Dispatch(SensorContext sensorContext, TextContext textContext, GameObject gameObject, bool cycleNextPressed)
+    public void Dispatch(SensorContext sensorContext, TextContext textContext, GameObject gameObject, int selectedVariant)
     {
-        bool _cycleNextPressed = cycleNextPressed;
         bool hasLightTrigger = sensorContext.HasLight;
         bool _hasBlowOccured = sensorContext.HasBlow;
         bool hasClap = sensorContext.HasClap;
@@ -29,20 +28,16 @@ public class ShapeReactionDispatcher
 
 
         IShapeCycler cycler = gameObject.GetComponentInChildren<IShapeCycler>();
-        if (cycler != null && cycler.Count > 1)
+        if (cycler != null && cycler.Count > 1 && selectedVariant != RemoteProtocol.NO_INDEX)
         {
-
-            if (_cycleNextPressed)
-            {
-                cycler.Next();
-            }
+            cycler.Select(selectedVariant);
         }
 
         //for Text Rendering
         TextRenderingScript script = gameObject.GetComponentInChildren<TextRenderingScript>();
         if(script != null)
         {
-            script?.UpdateText(textContext.Text);
+            script.UpdateText(textContext.Text, textContext.IsWordPerLine);
         }
     }
 }

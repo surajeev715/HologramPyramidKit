@@ -1,15 +1,21 @@
+using System.Collections.Generic;
 using UnityEngine;
 
-//Lets the remote link press the host's buttons: forwards to the ShapeSwitcher and the current shape.
+//Lets the remote link use the host's controls: forwards to the ShapeSwitcher and the current shape.
 public class ShapeSwitcherControls : IHologramControls
 {
     private const int MIN_STATES_TO_SWITCH = 2;
 
     private readonly ShapeSwitcher _switcher;
+    private readonly TextContext _textContext;
 
-    public ShapeSwitcherControls(ShapeSwitcher switcher)
+    private readonly List<string> _shapeNames = new List<string>();
+    private readonly VariantNameCache _variantNames = new VariantNameCache();
+
+    public ShapeSwitcherControls(ShapeSwitcher switcher, TextContext textContext)
     {
         _switcher = switcher;
+        _textContext = textContext;
     }
 
     public string CurrentShapeName
@@ -21,9 +27,42 @@ public class ShapeSwitcherControls : IHologramControls
         }
     }
 
+    public IReadOnlyList<string> ShapeNames
+    {
+        get
+        {
+            List<GameObject> shapes = _switcher.shapes;
+            int count = shapes != null ? shapes.Count : 0;
+            if (_shapeNames.Count != count)
+            {
+                _shapeNames.Clear();
+                for (int i = 0; i < count; i++)
+                {
+                    _shapeNames.Add(shapes[i] != null ? shapes[i].name : "");
+                }
+            }
+            return _shapeNames;
+        }
+    }
+
+    public int CurrentShapeIndex => _switcher.CurrentIndex;
+
+    public ShapeFeatures CurrentFeatures => ShapeFeatureDetector.Detect(_switcher.GetCurrentShape());
+
     public bool IsSpinning => _switcher.spinning;
 
-    public string CurrentAnimationName
+    public IReadOnlyList<string> VariantNames => _variantNames.Get(FindCycler());
+
+    public int CurrentVariantIndex
+    {
+        get
+        {
+            IShapeCycler cycler = FindCycler();
+            return cycler != null ? cycler.CurrentIndex : RemoteProtocol.NO_INDEX;
+        }
+    }
+
+    public string CurrentVariantName
     {
         get
         {
@@ -32,9 +71,20 @@ public class ShapeSwitcherControls : IHologramControls
         }
     }
 
-    public void NextShape()
+    public bool IsWordPerLine => _textContext.IsWordPerLine;
+
+    public void SetWordPerLine(bool value)
     {
-        _switcher.NextShape();
+        _textContext.IsWordPerLine = value;
+    }
+
+    public void ShowShape(int index)
+    {
+        List<GameObject> shapes = _switcher.shapes;
+        if (shapes != null && index >= 0 && index < shapes.Count)
+        {
+            _switcher.Show(index);
+        }
     }
 
     public void SetSpinning(bool value)
@@ -42,12 +92,12 @@ public class ShapeSwitcherControls : IHologramControls
         _switcher.SetSpinning(value);
     }
 
-    public void NextAnimation()
+    public void SelectVariant(int index)
     {
         IShapeCycler cycler = FindCycler();
         if (cycler != null)
         {
-            cycler.Next();
+            cycler.Select(index);
         }
     }
 

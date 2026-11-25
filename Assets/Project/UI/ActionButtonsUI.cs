@@ -1,37 +1,41 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class ActionButtonsUI
 {
-
-
-    private static readonly Color INDICATOR_ON = new Color(1f, 0.85f, 0.2f);
-
-    private GUIStyle _labelStyle;
-
-    public void Draw(GUILayoutOption height, ActionController controller, GUIStyle buttonStyle, GUIStyle labelStyle)
+    public static bool HasButtons(ShapeFeatures features)
     {
-        GUILayout.Label("Sensors of this device (lit when detected, tap to trigger)", labelStyle);
+        return (features & (ShapeFeatures.Clap | ShapeFeatures.Blow | ShapeFeatures.Light)) != 0;
+    }
 
+    public void Draw(UITheme theme, ActionController controller, ShapeFeatures features)
+    {
         float now = Time.time;
+        GUILayoutOption height = GUILayout.Height(theme.Row);
+        bool isFirst = true;
+
         GUILayout.BeginHorizontal();
-        if (SensorButton("Clap", controller.IsClapActive(), height, buttonStyle)) controller.TriggerClap(true, now);
-        if (SensorButton("Blow", controller.IsBlowActive(), height, buttonStyle)) controller.TriggerBlow(true, now);
-        if (SensorButton("Light", controller.IsLightActive(), height, buttonStyle)) controller.TriggerLight(true, now);
+        if ((features & ShapeFeatures.Clap) != 0 && SensorButton(theme, "Clap", controller.IsClapActive(), height, ref isFirst))
+        {
+            controller.TriggerClap(true, now);
+        }
+        if ((features & ShapeFeatures.Blow) != 0 && SensorButton(theme, "Blow", controller.IsBlowActive(), height, ref isFirst))
+        {
+            controller.TriggerBlow(true, now);
+        }
+        if ((features & ShapeFeatures.Light) != 0 && SensorButton(theme, "Light", controller.IsLightActive(), height, ref isFirst))
+        {
+            controller.TriggerLight(true, now);
+        }
         GUILayout.EndHorizontal();
     }
 
-    private bool SensorButton(string text, bool hasIndicatorOn,  GUILayoutOption height, GUIStyle buttonStyle)
+    private static bool SensorButton(UITheme theme, string text, bool isLit, GUILayoutOption height, ref bool isFirst)
     {
-        Color previous = GUI.backgroundColor;
-        if (hasIndicatorOn)
+        if (!isFirst)
         {
-            GUI.backgroundColor = INDICATOR_ON;
+            GUILayout.Space(theme.Gap);
         }
-        bool isPressed = GUILayout.Button(text, buttonStyle, height);
-        GUI.backgroundColor = previous;
-        return isPressed;
+        isFirst = false;
+        return GUILayout.Button(text, isLit ? theme.AccentButton : theme.Button, height, GUILayout.ExpandWidth(true));
     }
 }

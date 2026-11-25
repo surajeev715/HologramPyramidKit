@@ -1,28 +1,17 @@
 using UnityEngine;
 
-//Top right corner of the host's screen: the button that starts hosting, the QR code and the connected remotes.
+//The remotes part of the host's menu: the button that starts hosting, the QR code and the connected remotes.
 //A remote has its own screen, see RemoteDeviceUI.
 public class RemoteLinkUI
 {
-    //Same button size as ShapeSwitchUI.
-    private const float buttonWidthCm = 3.5f;
-    private const float buttonHeightCm = 1f;
-    private const float buttonMarginCm = 0.3f;
-    private const float qrSizeCm = 4f;
-
-    private const float FALLBACK_DPI = 96f;
-    private const float CM_PER_INCH = 2.54f;
-    private const float BUTTON_FONT_SCALE = 0.35f;
-    private const float LABEL_FONT_SCALE = 0.28f;
+    private const float QR_MAX_SIZE_CM = 5.5f;
+    private const float LIST_ROW_IN_ROWS = 0.7f;
 
     //White border the QR standard asks for, in modules.
     private const int QR_QUIET_ZONE = 4;
     private const char QR_DARK = '1';
 
     private readonly IRemoteLinkPlatform _platform;
-
-    private GUIStyle _buttonStyle;
-    private GUIStyle _labelStyle;
 
     private Texture2D _qrTexture;
     private string _qrUrl;
@@ -33,107 +22,115 @@ public class RemoteLinkUI
         _platform = platform;
     }
 
-    public void Draw(RemoteLink link)
+    public void Draw(UITheme theme, RemoteLink link, float width)
     {
-        float dpi = Screen.dpi > 0 ? Screen.dpi : FALLBACK_DPI;
-        float pixelsPerCm = dpi / CM_PER_INCH;
-
-        float width = buttonWidthCm * pixelsPerCm;
-        float height = buttonHeightCm * pixelsPerCm;
-        float margin = buttonMarginCm * pixelsPerCm;
-
-        if (_buttonStyle == null)
-        {
-            _buttonStyle = new GUIStyle(GUI.skin.button);
-            _buttonStyle.alignment = TextAnchor.MiddleCenter;
-
-            //Names and messages come from other devices, so they are never read as rich text.
-            _labelStyle = new GUIStyle(GUI.skin.box);
-            _labelStyle.alignment = TextAnchor.UpperLeft;
-            _labelStyle.wordWrap = true;
-            _labelStyle.richText = false;
-        }
-        _buttonStyle.fontSize = Mathf.RoundToInt(height * BUTTON_FONT_SCALE);
-        _labelStyle.fontSize = Mathf.RoundToInt(height * LABEL_FONT_SCALE);
-
-        float panelWidth = Mathf.Max(width, qrSizeCm * pixelsPerCm);
-        Rect area = new Rect(Screen.width - panelWidth - margin, margin, panelWidth, Screen.height - 2 * margin);
-
-        GUILayout.BeginArea(area);
+        theme.SectionLabel("Remotes");
         if (link.LoadError != null)
         {
-            GUILayout.Label(link.LoadError, _labelStyle);
+            GUILayout.Label(link.LoadError, theme.Paragraph);
+            return;
         }
-        else
-        {
-            DrawHost(link, link.Host, panelWidth, height);
-        }
-        GUILayout.EndArea();
+        DrawHost(theme, link, link.Host, width);
     }
 
-    private void DrawHost(RemoteLink link, RemoteHostSession host, float panelWidth, float buttonHeight)
+    private void DrawHost(UITheme theme, RemoteLink link, RemoteHostSession host, float width)
     {
+        GUILayoutOption height = GUILayout.Height(theme.Row);
         switch (host.State)
         {
             case RemoteHostSession.HostState.NotHosting:
+                //Read before the button: starting clears the error, and the controls must stay the same for this event.
+                string error = host.Error;
                 GUI.enabled = link.IsReady;
-                if (GUILayout.Button(link.IsReady ? "Add remotes" : "Loading...", _buttonStyle, GUILayout.Height(buttonHeight)))
+                if (GUILayout.Button(link.IsReady ? "Add remotes" : "Loading...", theme.AccentButton, height))
                 {
                     host.StartHosting();
                 }
                 GUI.enabled = true;
 
-                if (host.Error != null)
+                if (error != null)
                 {
-                    GUILayout.Label(host.Error, _labelStyle);
+                    GUILayout.Space(theme.Gap);
+                    theme.StatusLine("Could not start", UITheme.BAD, theme.Caption, theme.SectionLabelHeight);
+                    GUILayout.Label(error, theme.Paragraph);
+                }
+                else
+                {
+                    GUILayout.Space(theme.Gap / 2f);
+                    GUILayout.Label("Phones scan a QR code and become extra sensors.", theme.Paragraph);
                 }
                 return;
 
             case RemoteHostSession.HostState.Starting:
                 GUI.enabled = false;
-                GUILayout.Button("Starting...", _buttonStyle, GUILayout.Height(buttonHeight));
+                GUILayout.Button("Starting...", theme.Button, height);
                 GUI.enabled = true;
                 return;
         }
 
         //A click only takes effect in the next GUI event: IMGUI needs the same controls for the whole event.
         bool showDetails = _showDetails;
-        string countText = "Remotes: " + host.Remotes.Count + " / " + RemoteProtocol.MAX_REMOTES;
-        if (GUILayout.Button(countText, _buttonStyle, GUILayout.Height(buttonHeight)))
+        string countText = host.Remotes.Count + " / " + RemoteProtocol.MAX_REMOTES;
+        if (theme.ValueRow(showDetails ? "Hide QR code" : "Show QR code", countText))
         {
             _showDetails = !_showDetails;
         }
-        if (!showDetails)
-        {
-            return;
-        }
 
-        Texture2D qr = GetQrTexture(host.JoinUrl);
-        if (qr != null)
+        if (showDetails)
         {
-            Rect qrRect = GUILayoutUtility.GetRect(panelWidth, panelWidth);
-            GUI.DrawTexture(qrRect, qr, ScaleMode.ScaleToFit);
-        }
+            Texture2D qr = GetQrTexture(host.JoinUrl);
+            if (qr != null)
+            {
+                GUILayout.Space(theme.Gap);
+                float size = Mathf.Min(width, QR_MAX_SIZE_CM * ScreenDpi.PixelsPerCm);
+                GUILayout.BeginHorizontal();
+                GUILayout.FlexibleSpace();
+                Rect qrRect = GUILayoutUtility.GetRect(size, size, GUILayout.Width(size), GUILayout.Height(size));
+                GUILayout.FlexibleSpace();
+                GUILayout.EndHorizontal();
+                if (Event.current.type == EventType.Repaint)
+                {
+                    //The QR texture has its own white border, the rounded white card behind it only softens the corners.
+                    theme.DrawRounded(qrRect, Color.white);
+                    float inset = theme.Gap / 2f;
+                    GUI.DrawTexture(new Rect(qrRect.x + inset, qrRect.y + inset, qrRect.width - 2f * inset,
+                        qrRect.height - 2f * inset), qr, ScaleMode.ScaleToFit);
+                }
+            }
 
-        if (GUILayout.Button("Copy link", _buttonStyle, GUILayout.Height(buttonHeight)))
-        {
-            _platform.CopyText(host.JoinUrl);
+            GUILayout.Space(theme.Gap);
+            if (GUILayout.Button("Copy link", theme.Button, height))
+            {
+                _platform.CopyText(host.JoinUrl);
+            }
         }
 
         if (host.IsSignalingLost)
         {
-            GUILayout.Label("Server lost. Connected remotes keep working, new ones can not join. Retrying...", _labelStyle);
+            GUILayout.Space(theme.Gap);
+            theme.StatusLine("Server lost", UITheme.BUSY, theme.Caption, theme.SectionLabelHeight);
+            GUILayout.Label("Connected remotes keep working, new ones can not join. Retrying...", theme.Paragraph);
         }
 
+        if (host.Remotes.Count > 0)
+        {
+            GUILayout.Space(theme.Gap / 2f);
+        }
+        float rowHeight = theme.Row * LIST_ROW_IN_ROWS;
         foreach (RemoteHostSession.ConnectedRemote remote in host.Remotes)
         {
-            GUILayout.Label(remote.Name + FormatRtt(remote.RttInMilliseconds), _labelStyle);
+            GUILayout.BeginHorizontal(GUILayout.Height(rowHeight));
+            GUILayout.BeginVertical();
+            theme.StatusLine(remote.Name, UITheme.GOOD, theme.Body, rowHeight);
+            GUILayout.EndVertical();
+            GUILayout.Label(FormatRtt(remote.RttInMilliseconds), theme.CaptionRight, GUILayout.Height(rowHeight));
+            GUILayout.EndHorizontal();
         }
     }
 
     private static string FormatRtt(float rttInMilliseconds)
     {
-        return rttInMilliseconds < 0f ? "" : "  (" + Mathf.RoundToInt(rttInMilliseconds) + " ms)";
+        return rttInMilliseconds < 0f ? "" : Mathf.RoundToInt(rttInMilliseconds) + " ms";
     }
 
     //The texture is only built again when the link changes.

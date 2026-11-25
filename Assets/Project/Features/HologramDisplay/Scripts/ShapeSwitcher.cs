@@ -20,13 +20,15 @@ public class ShapeSwitcher : MonoBehaviour
 
      private SensorDebugUI _debugUI;
 
+    private HostScreenUI _hostScreenUI;
+
     private ShapeReactionDispatcher _dispatcher;
 
 
     private TextContext _textContext;
 
 
-    private bool _cycleNextPressed = false;
+    private int _selectedVariant = RemoteProtocol.NO_INDEX;
 
     //Only set in the web build, other platforms have no remote link.
     private RemoteLink _remoteLink;
@@ -76,7 +78,7 @@ public class ShapeSwitcher : MonoBehaviour
 
 #if UNITY_WEBGL && !UNITY_EDITOR
         WebRemoteLinkPlatform remoteLinkPlatform = new WebRemoteLinkPlatform();
-        _remoteLink = new RemoteLink(remoteLinkPlatform, Application.absoluteURL, Application.streamingAssetsPath, new ShapeSwitcherControls(this));
+        _remoteLink = new RemoteLink(remoteLinkPlatform, Application.absoluteURL, Application.streamingAssetsPath, new ShapeSwitcherControls(this, _textContext));
         if (_remoteLink.IsRemote)
         {
             _remoteDeviceUI = new RemoteDeviceUI();
@@ -88,6 +90,7 @@ public class ShapeSwitcher : MonoBehaviour
         }
 #endif
         _debugUI = new SensorDebugUI();
+        _hostScreenUI = new HostScreenUI(_shapeSwitchUI, _remoteLinkUI, _debugUI);
     }
 
     public void Show(int index)
@@ -107,13 +110,6 @@ public class ShapeSwitcher : MonoBehaviour
         }
 
         Debug.Log($"[ShapeSwitcher] Zeige Form Index {current}: {shapes[current].name}");
-    }
-
-    public void NextShape()
-    {
-        if (shapes == null || shapes.Count == 0) return;
-        int nextIndex = (current + 1) % shapes.Count;
-        Show(nextIndex);
     }
 
     public void SetSpinning(bool value)
@@ -136,10 +132,7 @@ public class ShapeSwitcher : MonoBehaviour
         return (shapes == null || current >= shapes.Count) ? null : shapes[current];
     }
 
-    public string getCurrentShapeName()
-    {
-        return shapes[current].name;
-    }
+    public int CurrentIndex => current;
 
     void OnGUI()
     {
@@ -157,11 +150,21 @@ public class ShapeSwitcher : MonoBehaviour
         IShapeCycler cycler = shapes[current].GetComponentInChildren<IShapeCycler>();
 
         MeasurementContext previousMeasurements = _measurementController.GetPreviousMeasurement();
-        _debugUI.Draw(previousMeasurements.Peak, heldPeak, previousMeasurements.Rms, heldRms, crest, crestAtPeak, lastDuration, _actionController.GetContext(), gate, previousMeasurements.Brightness);
+        SensorDebugData debugData = new SensorDebugData
+        {
+            Peak = previousMeasurements.Peak,
+            HeldPeak = heldPeak,
+            Rms = previousMeasurements.Rms,
+            HeldRms = heldRms,
+            Crest = crest,
+            CrestAtPeak = crestAtPeak,
+            LastDuration = lastDuration,
+            Gate = gate,
+            Brightness = previousMeasurements.Brightness,
+            Context = _actionController.GetContext()
+        };
 
-        _shapeSwitchUI.Draw(cycler, spinning);
-
-        _remoteLinkUI?.Draw(_remoteLink);
+        _hostScreenUI.Draw(cycler, spinning, _textContext, _remoteLink, debugData);
     }
 
     public void RunSensor()
@@ -203,9 +206,9 @@ public class ShapeSwitcher : MonoBehaviour
         //A remote has no shapes on screen that could react, its results went to the host above.
         if (_remoteDeviceUI == null)
         {
-            //The cycle button was drawn in OnGUI() after the last frame
-            _cycleNextPressed = _shapeSwitchUI.ConsumeCycleNextPressed();
-            _dispatcher.Dispatch(sensorContext, _textContext, shapes[current], _cycleNextPressed);
+            //The variant dropdown was drawn in OnGUI() after the last frame
+            _selectedVariant = _shapeSwitchUI.ConsumeSelectedVariant();
+            _dispatcher.Dispatch(sensorContext, _textContext, shapes[current], _selectedVariant);
         }
 
         _actionController.ResetActions(Time.time);

@@ -1,115 +1,223 @@
+using System.Collections.Generic;
 using UnityEngine;
 
-//The whole screen of a remote: the state of the connection, the buttons that control the host's hologram,
-//and one field per sensor that lights up when this device detects it and triggers it by hand when tapped.
+//The whole screen of a remote: the state of the connection, the controls of the host's hologram, and only the
+//buttons the shown object can use (its sensors, the text field). Everything is sized so it fits on the screen.
 public class RemoteDeviceUI
 {
-    private const float MAX_WIDTH_CM = 8f;
-    private const float BUTTON_HEIGHT_CM = 1.3f;
+    private const float MAX_WIDTH_CM = 13f;
+    private const float ROW_HEIGHT_CM = 1.6f;
+    private const float MIN_ROW_HEIGHT_CM = 0.6f;
     private const float MARGIN_CM = 0.4f;
-    private const float BUTTON_FONT_SCALE = 0.32f;
-    private const float LABEL_FONT_SCALE = 0.26f;
 
-    private GUIStyle _buttonStyle;
-    private GUIStyle _labelStyle;
+    private const float HEIGHT_SLACK = 1.04f;
 
-    private TextInputUI _textInput;
+    private const float FADE_IN_SECONDS = 0.35f;
+    private const float PULSES_PER_SECOND = 1.2f;
+    private const float PULSE_MIN_ALPHA = 0.35f;
 
-    private ActionButtonsUI _actionButtonsUI;
-    public RemoteDeviceUI()
-    {
-        _textInput = new TextInputUI();
-        _actionButtonsUI = new ActionButtonsUI();
-    }
+    private const float HEADER = 1f + UITheme.SECTION_LABEL + UITheme.GAP;
+    private const float CARD = 2f * UITheme.PADDING + UITheme.SECTION_LABEL;
+    private const float SENSORS_SECTION = UITheme.GAP + CARD + 1f;
+    private const float TEXT_SECTION = UITheme.GAP + CARD + 1f + UITheme.GAP + 1f;
+
+    private const float ROWS_ABOVE_LIST = HEADER + UITheme.PADDING + UITheme.SECTION_LABEL + 1f;
+
+    private const int UI_DEPTH = -1;
+
+    private const string TITLE = "Hologram Remote";
+    private const string WAITING_FOR_HOST = "Waiting for the host...";
+
+    private readonly UITheme _theme = new UITheme();
+    private readonly ObjectControlsUI _controls = new ObjectControlsUI();
+    private readonly TextInputUI _textInput = new TextInputUI();
+    private readonly ActionButtonsUI _actionButtonsUI = new ActionButtonsUI();
+
+    private float _connectedAmount;
 
     public void Draw(RemoteLink link, TextContext textContext, ActionController controller)
     {
+        GUI.depth = UI_DEPTH;
+        GUI.color = Color.white;
+
         RemoteDeviceSession device = link.Device;
+        bool isConnected = link.LoadError == null && device.State == RemoteDeviceSession.DeviceState.Connected;
+        if (!isConnected)
+        {
+            _controls.CloseLists();
+        }
+
+        IReadOnlyList<string> shapeNames = device.HostShapeNames;
+        IReadOnlyList<string> variantNames = device.HostVariantNames;
+        bool isPicking = isConnected && _controls.IsPicking;
+        ShapeFeatures features = device.HostFeatures;
+        bool hasSensors = ActionButtonsUI.HasButtons(features);
+        bool hasText = (features & ShapeFeatures.Text) != 0;
+
         float pixelsPerCm = ScreenDpi.PixelsPerCm;
         float margin = MARGIN_CM * pixelsPerCm;
-        float buttonHeight = BUTTON_HEIGHT_CM * pixelsPerCm;
-        float width = Mathf.Min(MAX_WIDTH_CM * pixelsPerCm, Screen.width - 2f * margin);
+        Rect safe = SafeArea();
+        float height = safe.height - 2f * margin;
 
-        if (_buttonStyle == null)
+        float row = ROW_HEIGHT_CM * pixelsPerCm;
+        if (isConnected)
         {
-            _buttonStyle = new GUIStyle(GUI.skin.button);
-            _buttonStyle.alignment = TextAnchor.MiddleCenter;
-
-            //Names and messages come from other devices, so they are never read as rich text.
-            _buttonStyle.richText = false;
-            _labelStyle = new GUIStyle(GUI.skin.box);
-            _labelStyle.alignment = TextAnchor.MiddleCenter;
-            _labelStyle.wordWrap = true;
-            _labelStyle.richText = false;
+            float rows = ConnectedRows(hasSensors, hasText) * HEIGHT_SLACK;
+            row = Mathf.Clamp(height / rows, MIN_ROW_HEIGHT_CM * pixelsPerCm, row);
         }
-        _buttonStyle.fontSize = Mathf.RoundToInt(buttonHeight * BUTTON_FONT_SCALE);
-        _labelStyle.fontSize = Mathf.RoundToInt(buttonHeight * LABEL_FONT_SCALE);
+        _theme.Prepare(row);
 
-        GUILayoutOption height = GUILayout.Height(buttonHeight);
+        float listSpace = height - (ROWS_ABOVE_LIST + UITheme.PADDING) * row * HEIGHT_SLACK;
+        _theme.DrawBackground();
 
-        GUILayout.BeginArea(new Rect((Screen.width - width) / 2f, margin, width, Screen.height - 2f * margin));
+        float width = Mathf.Min(MAX_WIDTH_CM * pixelsPerCm, safe.width - 2f * margin);
+        GUILayout.BeginArea(new Rect(safe.x + (safe.width - width) / 2f, safe.y + margin, width, height));
+        DrawHeader(link, device);
+        _theme.Divider();
 
-        GUILayout.Label(link.LoadError ?? StatusText(device), _labelStyle);
-        if (!string.IsNullOrEmpty(device.Hint))
+        _connectedAmount = isConnected ? _theme.Animate(_connectedAmount, 1f, FADE_IN_SECONDS) : 0f;
+        if (isConnected)
         {
-            GUILayout.Label(device.Hint, _labelStyle);
-        }
+            Color previous = GUI.color;
+            GUI.color = new Color(1f, 1f, 1f, UITheme.Ease(_connectedAmount));
 
-        if (device.CanReconnect && GUILayout.Button("Reconnect", _buttonStyle, height))
-        {
-            device.Reconnect();
-        }
+            DrawHologramCard(device, shapeNames, variantNames, listSpace);
 
-        if (device.State == RemoteDeviceSession.DeviceState.Connected)
-        {
-            GUILayout.Space(margin);
-            DrawControls(device, height);
-            GUILayout.Space(margin);
-            _actionButtonsUI.Draw(height,controller,_buttonStyle, _labelStyle);
-            _textInput.Draw();
+            if (!isPicking && hasSensors)
+            {
+                GUILayout.Space(_theme.Gap);
+                GUILayout.BeginVertical(_theme.Card);
+                _theme.SectionLabel("Sensors", "tap to trigger");
+                _actionButtonsUI.Draw(_theme, controller, features);
+                GUILayout.EndVertical();
+            }
+            if (!isPicking && hasText)
+            {
+                GUILayout.Space(_theme.Gap);
+                GUILayout.BeginVertical(_theme.Card);
+                _theme.SectionLabel("Text");
+                _textInput.Draw(_theme);
+                GUILayout.Space(_theme.Gap);
+                bool wordPerLine = _theme.SwitchRow(ObjectControlsUI.WORD_PER_LINE, device.IsHostWordPerLine);
+                if (wordPerLine != device.IsHostWordPerLine)
+                {
+                    device.RequestSetWordPerLine(wordPerLine);
+                }
+                GUILayout.EndVertical();
+            }
             textContext.Text = _textInput.text;
+            GUI.color = previous;
         }
         else
         {
-            GUILayout.Label("Connection Failed ?", _labelStyle);
+            DrawConnectionCard(link, device);
         }
-
-        
 
         GUILayout.EndArea();
     }
 
-    //Same buttons as on the host (ShapeSwitchUI), they show what the host shows.
-    private void DrawControls(RemoteDeviceSession device, GUILayoutOption height)
+    private void DrawHeader(RemoteLink link, RemoteDeviceSession device)
     {
-        GUILayout.Label("Hologram", _labelStyle);
+        GUILayout.Label(TITLE, _theme.Title, GUILayout.Height(_theme.Row));
 
-        string shapeText = device.HostShapeName.Length > 0 ? device.HostShapeName : "Next shape";
-        if (GUILayout.Button(shapeText, _buttonStyle, height))
+        bool hasError = link.LoadError != null;
+        string status = hasError ? "Error" : device.Status;
+        Color color = hasError ? UITheme.BAD : StatusColor(device.State);
+        bool isBusy = !hasError && device.State != RemoteDeviceSession.DeviceState.Connected
+            && device.State != RemoteDeviceSession.DeviceState.Failed;
+        if (isBusy)
         {
-            device.RequestNextShape();
+            float wave = 0.5f + 0.5f * Mathf.Cos(Time.unscaledTime * PULSES_PER_SECOND * 2f * Mathf.PI);
+            color.a = Mathf.Lerp(PULSE_MIN_ALPHA, 1f, wave);
         }
+        bool hasRtt = !hasError && device.State == RemoteDeviceSession.DeviceState.Connected && device.RttInMilliseconds >= 0f;
+        string rtt = hasRtt ? Mathf.RoundToInt(device.RttInMilliseconds) + " ms" : "";
 
-        if (GUILayout.Button(device.IsHostSpinning ? "Spin: On" : "Spin: Off", _buttonStyle, height))
-        {
-            device.RequestSetSpinning(!device.IsHostSpinning);
-        }
-
-        //Only shapes with several animations have this button, like on the host.
-        //It is disabled instead of removed, so the buttons below do not jump when the shape changes.
-        bool hasAnimations = device.HostAnimationName.Length > 0;
-        GUI.enabled = hasAnimations;
-        if (GUILayout.Button(hasAnimations ? device.HostAnimationName : "No animations", _buttonStyle, height))
-        {
-            device.RequestNextAnimation();
-        }
-        GUI.enabled = true;
+        float height = _theme.SectionLabelHeight;
+        GUILayout.BeginHorizontal(GUILayout.Height(height));
+        GUILayout.BeginVertical();
+        _theme.StatusLine(status, color, _theme.Caption, height);
+        GUILayout.EndVertical();
+        GUILayout.Label(rtt, _theme.CaptionRight, GUILayout.Height(height));
+        GUILayout.EndHorizontal();
     }
 
-
-    private static string StatusText(RemoteDeviceSession device)
+    private void DrawHologramCard(RemoteDeviceSession device, IReadOnlyList<string> shapeNames, IReadOnlyList<string> variantNames,
+        float listSpace)
     {
-        bool hasRtt = device.State == RemoteDeviceSession.DeviceState.Connected && device.RttInMilliseconds >= 0f;
-        return hasRtt ? device.Status + "  (" + Mathf.RoundToInt(device.RttInMilliseconds) + " ms)" : device.Status;
+        GUILayout.BeginVertical(_theme.Card);
+        _theme.SectionLabel("Hologram");
+
+        string shapePlaceholder = device.HostShapeName.Length > 0 ? device.HostShapeName : WAITING_FOR_HOST;
+        ObjectControlsUI.Result result = _controls.Draw(_theme, shapeNames, device.HostShapeIndex, shapePlaceholder,
+            variantNames, device.HostVariantIndex, device.HostVariantName, device.IsHostSpinning, null, listSpace);
+
+        if (result.PickedShape != RemoteProtocol.NO_INDEX && result.PickedShape != device.HostShapeIndex)
+        {
+            device.RequestSelectShape(result.PickedShape);
+        }
+        if (result.PickedVariant != RemoteProtocol.NO_INDEX && result.PickedVariant != device.HostVariantIndex)
+        {
+            device.RequestSelectVariant(result.PickedVariant);
+        }
+        if (result.Spinning != device.IsHostSpinning)
+        {
+            device.RequestSetSpinning(result.Spinning);
+        }
+        GUILayout.EndVertical();
+    }
+
+    private void DrawConnectionCard(RemoteLink link, RemoteDeviceSession device)
+    {
+        GUILayout.BeginVertical(_theme.Card);
+        string text = link.LoadError ?? (device.Hint.Length > 0 ? device.Hint : WaitingText(device.State));
+        GUILayout.Label(text, _theme.Paragraph);
+
+        if (link.LoadError == null && device.CanReconnect)
+        {
+            GUILayout.Space(_theme.Gap);
+            if (GUILayout.Button("Reconnect", _theme.AccentButton, GUILayout.Height(_theme.Row)))
+            {
+                device.Reconnect();
+            }
+        }
+        GUILayout.EndVertical();
+    }
+
+    private static float ConnectedRows(bool hasSensors, bool hasText)
+    {
+        float after = 0f;
+        if (hasSensors)
+        {
+            after += SENSORS_SECTION;
+        }
+        if (hasText)
+        {
+            after += TEXT_SECTION;
+        }
+        return HEADER + CARD + ObjectControlsUI.Rows(false) + Mathf.Max(after, TEXT_SECTION);
+    }
+
+    private static Rect SafeArea()
+    {
+        Rect safe = Screen.safeArea;
+        return new Rect(safe.x, Screen.height - safe.yMax, safe.width, safe.height);
+    }
+
+    private static Color StatusColor(RemoteDeviceSession.DeviceState state)
+    {
+        switch (state)
+        {
+            case RemoteDeviceSession.DeviceState.Connected: return UITheme.GOOD;
+            case RemoteDeviceSession.DeviceState.Failed: return UITheme.BAD;
+            default: return UITheme.BUSY;
+        }
+    }
+
+    private static string WaitingText(RemoteDeviceSession.DeviceState state)
+    {
+        return state == RemoteDeviceSession.DeviceState.Loading
+            ? "Loading the connection library..."
+            : "Connecting to the hologram. Keep the host page open.";
     }
 }

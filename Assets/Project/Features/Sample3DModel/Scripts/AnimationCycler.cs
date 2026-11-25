@@ -1,6 +1,6 @@
 using UnityEngine;
 
-//Switches between the states of the Animator's base layer, either with Next() or automatically one after another.
+//Switches between the states of the Animator's base layer, either with Select() or automatically one after another.
 [RequireComponent(typeof(Animator))]
 public class AnimationCycler : MonoBehaviour, IShapeCycler
 {
@@ -42,20 +42,30 @@ public class AnimationCycler : MonoBehaviour, IShapeCycler
         get { return states.Length; }
     }
 
+    public int CurrentIndex
+    {
+        get { return current; }
+    }
+
     public string CurrentName
     {
         get { return states.Length > 0 ? states[current] : ""; }
     }
 
-    public void Next()
+    public string NameAt(int index)
     {
-        if (states.Length < 2)
+        return index >= 0 && index < states.Length ? states[index] : "";
+    }
+
+    public void Select(int index)
+    {
+        if (index < 0 || index >= states.Length || index == current)
         {
             return;
         }
 
         timer = 0f;
-        current = (current + 1) % states.Length;
+        current = index;
         animator.CrossFadeInFixedTime(states[current], crossFadeSeconds, 0);
     }
 
@@ -68,9 +78,9 @@ public class AnimationCycler : MonoBehaviour, IShapeCycler
 
         timer += Time.deltaTime;
 
-        if (timer >= secondsPerState)
+        if (timer >= secondsPerState && states.Length > 1)
         {
-            Next();
+            Select((current + 1) % states.Length);
         }
     }
 }
