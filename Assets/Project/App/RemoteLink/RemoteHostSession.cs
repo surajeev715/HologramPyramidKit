@@ -19,6 +19,8 @@ public class RemoteHostSession : IRemoteSession
         //Clap and blow are single moments: kept until the next frame used them, then cleared.
         internal bool PendingClap;
         internal bool PendingBlow;
+
+        internal bool PendingLight;
         //Light is a state: kept until the remote reports a change.
         internal bool HasLight;
 
@@ -152,12 +154,12 @@ public class RemoteHostSession : IRemoteSession
             {
                 sensorContext.HasClap |= remote.PendingClap;
                 sensorContext.HasBlow |= remote.PendingBlow;
-                sensorContext.HasLight |= remote.HasLight;
+                sensorContext.HasLight |= remote.PendingLight;
             }
             textContext.Text = remote.text;
             remote.PendingClap = false;
             remote.PendingBlow = false;
-
+            remote.PendingLight = false;
         }
     }
 
@@ -323,7 +325,7 @@ public class RemoteHostSession : IRemoteSession
             case RemoteMessageType.Sensor:
                 remote.PendingClap |= message.clap;
                 remote.PendingBlow |= message.blow;
-                remote.HasLight = message.light;
+                remote.PendingLight |= message.light;
                 remote.text = message.text;
                 break;
 

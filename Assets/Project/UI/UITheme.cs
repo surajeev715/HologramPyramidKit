@@ -139,7 +139,7 @@ public class UITheme
         Hint.padding = new RectOffset(padding * 2, padding * 2, padding, padding);
     }
 
-    public float AnimationStep => Event.current.type == EventType.Repaint ? _repaintStep : 0f
+    public float AnimationStep => Event.current.type == EventType.Repaint ? _repaintStep : 0f;
 
     public float Animate(float current, float target, float seconds)
     {
