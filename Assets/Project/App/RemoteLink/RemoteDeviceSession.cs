@@ -36,6 +36,10 @@ public class RemoteDeviceSession : IRemoteSession
     private int _sequence;
     private bool _pendingClap;
     private bool _pendingBlow;
+
+    private bool _pendingLight;
+
+    private bool _previousLocalLight;
     private bool _lastSentLight;
     private float _lastSensorSendTime;
 
@@ -147,7 +151,7 @@ public class RemoteDeviceSession : IRemoteSession
     public void TriggerLight()
     {
         _manualLight = true;
-    } 
+    }
 
     public void SetText(string text)
     {
@@ -236,26 +240,24 @@ public class RemoteDeviceSession : IRemoteSession
     public void Apply(SensorContext sensorContext, TextContext textContext, float now)
     {
         //Manual taps count exactly like the real sensors.
-        if (_manualLight)
-        {
-            _manualLightEndTime = now + MANUAL_LIGHT_IN_SECONDS;
-        }
+        bool lightTriggered = (sensorContext.HasLight && !_previousLocalLight) || _manualLight;
+        _previousLocalLight = sensorContext.HasLight;
         bool hasClap = sensorContext.HasClap || _manualClap;
         bool hasBlow = sensorContext.HasBlow || _manualBlow;
-        bool hasLight = sensorContext.HasLight || now < _manualLightEndTime;
         _manualClap = false;
         _manualBlow = false;
         _manualLight = false;
-        
+
 
         if (hasClap) LastClapTime = now;
         if (hasBlow) LastBlowTime = now;
-        if (hasLight) LastLightTime = now;
+        if (lightTriggered) LastLightTime = now;
 
         if (State != DeviceState.Connected)
         {
             _pendingClap = false;
             _pendingBlow = false;
+            _pendingLight = false;
             _queuedCommands.Clear();
             return;
         }
@@ -269,9 +271,10 @@ public class RemoteDeviceSession : IRemoteSession
         //A clap lasts one frame but messages are sent less often, so it is remembered until the next one goes out.
         _pendingClap |= hasClap;
         _pendingBlow |= hasBlow;
+        _pendingLight |= lightTriggered;
 
         //Light is a state, not a moment: the host keeps the last value it got, so it is only sent when it changes.
-        bool hasNews = _pendingClap || _pendingBlow || hasLight != _lastSentLight || (_text != textContext.Text);
+        bool hasNews = _pendingClap || _pendingBlow || _pendingLight || (_text != textContext.Text);
         bool maySend = now - _lastSensorSendTime >= RemoteProtocol.MIN_SENSOR_SEND_INTERVAL_IN_SECONDS;
         if (!hasNews || !maySend)
         {
@@ -288,13 +291,13 @@ public class RemoteDeviceSession : IRemoteSession
         message.seq = ++_sequence;
         message.clap = _pendingClap;
         message.blow = _pendingBlow;
-        message.light = hasLight;
+        message.light = _pendingLight;
         message.text = _text;
         Send(message);
 
         _pendingClap = false;
         _pendingBlow = false;
-        _lastSentLight = hasLight;
+        _pendingLight = false;
         _lastSensorSendTime = now;
     }
 
